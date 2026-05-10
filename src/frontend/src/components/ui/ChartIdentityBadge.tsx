@@ -7,7 +7,7 @@ type Props = {
 export default function ChartIdentityBadge({ summary }: Props) {
   return (
     <p className="text-xs text-sage-500 font-medium tracking-wide">
-      {summary.display_label}
+      {summary.day_pillar_label} · {summary.day_master_label}
     </p>
   )
 }

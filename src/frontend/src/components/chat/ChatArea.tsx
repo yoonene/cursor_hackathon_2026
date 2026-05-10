@@ -26,9 +26,13 @@ export default function ChatArea() {
         {phase !== 'intake' && (
           <button
             onClick={() => reset()}
-            className="text-xs text-sage-400 hover:text-sage-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-sage-600 border border-sage-400 hover:border-sage-600 hover:bg-sage-100 rounded-md px-3 py-1 transition-colors"
           >
-            New reading
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            New session
           </button>
         )}
       </div>
