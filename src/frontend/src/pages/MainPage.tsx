@@ -1,4 +1,5 @@
 import type { Phase } from '@/store/sessionStore'
+import LandingPage from '@/pages/LandingPage'
 import IntakeForm from '@/components/intake/IntakeForm'
 import ChatArea from '@/components/chat/ChatArea'
 import RightPanel from '@/components/right-panel/RightPanel'
@@ -8,6 +9,10 @@ type Props = {
 }
 
 export default function MainPage({ phase }: Props) {
+  if (phase === 'landing') {
+    return <LandingPage />
+  }
+
   if (phase === 'intake') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">

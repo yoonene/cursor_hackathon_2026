@@ -39,7 +39,10 @@ export default function IntakeForm() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-sage-100 mb-4">
           <span className="text-2xl">🌿</span>
         </div>
-        <h1 className="text-2xl font-semibold text-sage-900 tracking-tight">AI Saju Counselor</h1>
+        <h1 className="text-3xl tracking-tight">
+          <span className="font-bold text-sage-900">Fate</span>
+          <span className="font-light text-sage-400">.me</span>
+        </h1>
         <p className="mt-2 text-sage-500 text-sm leading-relaxed">
           Share when you were born and I will begin your reading.
         </p>
@@ -60,7 +63,7 @@ export default function IntakeForm() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="e.g. Yoonhye"
+            placeholder="e.g. Yoon"
             className="w-full rounded-xl border border-sage-200 bg-sage-50 px-4 py-2.5 text-sm text-sage-900 placeholder:text-sage-300 focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition"
           />
         </div>

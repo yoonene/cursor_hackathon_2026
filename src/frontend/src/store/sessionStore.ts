@@ -10,7 +10,7 @@ import type {
 import { startReadingStream } from '@/api/reading'
 import { sendChatStream, sendChat, resetSession } from '@/api/chat'
 
-export type Phase = 'intake' | 'reading' | 'counseling'
+export type Phase = 'landing' | 'intake' | 'reading' | 'counseling'
 
 export type ChatMessage = {
   id: string
@@ -34,6 +34,7 @@ type SessionState = {
 }
 
 type SessionActions = {
+  goToIntake: () => void
   submitIntake: (request: Omit<StartReadingRequest, 'session_id'>) => Promise<void>
   submitMessage: (text: string) => Promise<void>
   submitPartner: (partner: PartnerCompatibilityPayload) => Promise<void>
@@ -46,7 +47,7 @@ const makeId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const initialState: SessionState = {
   sessionId: `session-${Date.now()}`,
-  phase: 'intake',
+  phase: 'landing',
   currentStage: null,
   messages: [],
   sajuReport: null,
@@ -60,6 +61,8 @@ const initialState: SessionState = {
 
 export const useSessionStore = create<SessionState & SessionActions>((set, get) => ({
   ...initialState,
+
+  goToIntake: () => set({ phase: 'intake' }),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
