@@ -510,9 +510,9 @@ def _partner_intake_addon(supplemental_context: str | None) -> str:
         )
         return overrides + reopen_line + (
             "- The user is asking about compatibility.\n"
-            "- Explain warmly that you need the other person's birth date to compare charts.\n"
-            "- Mention their name/nickname is optional.\n"
-            "- Ask for the birth date in YYYY-MM-DD format.\n"
+            "- Respond in ONE short sentence inviting them to enter the other person's info via the form that just appeared.\n"
+            "- Do NOT mention date formats, nicknames, or any instructions — the form handles that.\n"
+            "- Keep it warm and brief, like 'Let's check your compatibility! Go ahead and fill in their info.'\n"
         )
 
     if tool == "compatibility_collect" and not blob.get("parsed_birth_date"):
