@@ -79,7 +79,7 @@ export async function startReadingStream(
               handlers.onComplete?.(payload as InitialReadingResponse)
             }
           } catch {
-            // JSON 파싱 실패 시 무시
+            // Skip JSON parse failures
           }
         }
       }

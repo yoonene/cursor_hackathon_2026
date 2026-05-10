@@ -12,11 +12,8 @@ export default function ChatInput() {
   const submitMessage = useSessionStore((s) => s.submitMessage)
   const isLoading = useSessionStore((s) => s.isLoading)
   const phase = useSessionStore((s) => s.phase)
-  const messages = useSessionStore((s) => s.messages)
 
   const [text, setText] = useState('')
-
-  const isFirstUserMessage = messages.filter((m) => m.role === 'user').length === 0
 
   const send = () => {
     const trimmed = text.trim()
@@ -36,8 +33,8 @@ export default function ChatInput() {
 
   return (
     <div className="border-t border-sage-200 bg-warm-white px-4 pt-3 pb-4 space-y-3">
-      {/* Suggested prompts — shown only before first user message */}
-      {isFirstUserMessage && (
+      {/* Suggested prompts — shown whenever not loading */}
+      {!isLoading && (
         <div className="flex flex-wrap gap-2">
           {SUGGESTED_PROMPTS.map((prompt) => (
             <button

@@ -39,7 +39,10 @@ export default function IntakeForm() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-sage-100 mb-4">
           <span className="text-2xl">🌿</span>
         </div>
-        <h1 className="text-2xl font-semibold text-sage-900 tracking-tight">AI Saju Counselor</h1>
+        <h1 className="text-3xl tracking-tight">
+          <span className="font-bold text-sage-900">Fate</span>
+          <span className="font-light text-sage-400">.me</span>
+        </h1>
         <p className="mt-2 text-sage-500 text-sm leading-relaxed">
           Share when you were born and I will begin your reading.
         </p>

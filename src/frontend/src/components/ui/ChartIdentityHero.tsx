@@ -111,7 +111,7 @@ export default function ChartIdentityHero({ identity }: Props) {
   return (
     <div className={`rounded-xl border ${style.border} ${style.bg} px-5 py-5`}>
       <div className="flex items-center gap-4">
-        {/* 이미지: 오행(왼쪽) + 동물(오른쪽) 나란히 */}
+        {/* Images: element (left) + animal (right) side by side */}
         {elementImg && (
           <img
             src={elementImg}
@@ -127,7 +127,7 @@ export default function ChartIdentityHero({ identity }: Props) {
           />
         )}
 
-        {/* 텍스트 */}
+        {/* Text */}
         <div className="flex flex-col justify-center gap-1">
           <p className={`text-lg font-semibold ${style.label}`}>
             {day_pillar.english_name}

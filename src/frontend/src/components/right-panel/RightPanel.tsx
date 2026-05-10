@@ -27,7 +27,6 @@ export default function RightPanel() {
     )
   }
 
-  const isBoardLoading = isLoading && (sajuReport !== null || counselingBoard !== null)
   const isInitialLoading = isLoading && sajuReport === null && counselingBoard === null
 
   return (
@@ -71,28 +70,11 @@ export default function RightPanel() {
           </>
         )}
 
-        {/* Overlay loading when board is updating */}
-        {isBoardLoading && (
-          <div className="absolute inset-0 bg-warm-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 animate-fade-in">
-            <BoardSpinner />
-          </div>
-        )}
       </div>
     </div>
   )
 }
 
-function BoardSpinner() {
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-10 h-10">
-        <div className="absolute inset-0 rounded-full border-2 border-sage-200" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-sage-500 animate-spin" />
-      </div>
-      <p className="text-xs text-sage-400 tracking-wide">Updating board…</p>
-    </div>
-  )
-}
 
 function BoardLoadingState() {
   return (
