@@ -16,12 +16,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = [
+  "pytest>=8.0",
+  "httpx>=0.27.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+markers = [
+  "integration: subprocess Uvicorn + real HTTP client",
+]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

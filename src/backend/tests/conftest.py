@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
 MOCKS_DIR = REPO_ROOT / "docs" / "mocks"
 
 

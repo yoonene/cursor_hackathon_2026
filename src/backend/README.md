@@ -120,6 +120,12 @@ uv sync --extra dev
 uv run pytest
 ```
 
+- **인메모리(TestClient)** 위주: `tests/test_reading_start_api.py`
+- **실제 HTTP**: Uvicorn 서브프로세스 + `httpx` — `tests/test_api_live_http.py` (`@pytest.mark.integration`)
+  - 전체 실행 시 위 파일도 같이 돌아갑니다.
+  - 통합 테스트만: `uv run pytest -m integration`
+  - 통합 제외(빠른 CI 등): `uv run pytest -m "not integration"`
+
 - API 문서: `http://127.0.0.1:8000/docs`
 - 헬스: `GET /health`
 - 인테이크: `POST /reading/start` (본문 예시는 [`docs/api_contract.md`](../../docs/api_contract.md) §3 참고)
