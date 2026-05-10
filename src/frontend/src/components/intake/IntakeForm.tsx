@@ -63,7 +63,7 @@ export default function IntakeForm() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="e.g. Yoonhye"
+            placeholder="e.g. Yoon"
             className="w-full rounded-xl border border-sage-200 bg-sage-50 px-4 py-2.5 text-sm text-sage-900 placeholder:text-sage-300 focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition"
           />
         </div>
