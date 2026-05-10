@@ -18,10 +18,10 @@ export default function MainPage({ phase }: Props) {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      <div className="flex-1 min-w-0 flex flex-col border-r border-sage-200">
+      <div className="w-[60%] flex flex-col border-r border-sage-200">
         <ChatArea />
       </div>
-      <div className="w-[480px] shrink-0 flex flex-col bg-mist">
+      <div className="w-[40%] flex flex-col bg-mist">
         <RightPanel />
       </div>
     </div>
