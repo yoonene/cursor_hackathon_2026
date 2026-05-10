@@ -2,6 +2,7 @@ import type { SajuReport } from '@/types/api'
 import ElementChart from './ElementChart'
 import ReportSection from './ReportSection'
 import KeywordChip from '@/components/ui/KeywordChip'
+import ChartIdentityHero from '@/components/ui/ChartIdentityHero'
 
 type Props = {
   report: SajuReport
@@ -10,6 +11,11 @@ type Props = {
 export default function SajuReportTab({ report }: Props) {
   return (
     <div className="px-5 py-6 space-y-6">
+      {/* Chart Identity Hero — shown only when backend provides the new field */}
+      {report.chart_identity && (
+        <ChartIdentityHero identity={report.chart_identity} />
+      )}
+
       {/* Title */}
       <div>
         <h2 className="text-base font-semibold text-sage-900">{report.title}</h2>

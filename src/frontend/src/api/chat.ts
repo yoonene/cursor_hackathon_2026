@@ -28,6 +28,7 @@ export async function sendChat(request: ChatRequest): Promise<ChatResponse> {
 }
 
 export async function resetSession(sessionId: string): Promise<void> {
+  mockStep = 0
   if (useMock) return
   await apiClient.post('/session/reset', { session_id: sessionId })
 }

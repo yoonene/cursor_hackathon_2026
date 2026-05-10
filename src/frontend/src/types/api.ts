@@ -38,6 +38,51 @@ export type SessionResetRequest = {
   session_id: string
 }
 
+// ─── Chart Identity ───────────────────────────────────────────────────────────
+
+export type DayPillarIdentity = {
+  ganji_hanja: string
+  ganji_hangul: string
+  stem_hanja: string
+  branch_hanja: string
+  english_name: string
+  animal: string
+  animal_label: string
+  color: string
+}
+
+export type DayMasterIdentity = {
+  stem_hanja: string
+  stem_hangul: string
+  element: string
+  element_label: string
+  polarity: string
+  english_name: string
+  display_label: string
+}
+
+export type ChartVisualTokens = {
+  theme: string
+  accent: string
+  animal: string
+}
+
+export type ChartIdentity = {
+  day_pillar: DayPillarIdentity
+  day_master: DayMasterIdentity
+  visual_tokens: ChartVisualTokens
+}
+
+export type ChartIdentitySummary = {
+  day_pillar_hanja: string
+  day_pillar_label: string
+  day_master_label: string
+  display_label: string
+  theme: string
+  accent: string
+  animal: string
+}
+
 // ─── Saju Report ─────────────────────────────────────────────────────────────
 
 export type ReportSection = {
@@ -68,6 +113,7 @@ export type SajuReport = {
   strengths: string[]
   cautions: string[]
   one_line_verdict: string
+  chart_identity?: ChartIdentity
 }
 
 // ─── Active Reading Templates ─────────────────────────────────────────────────
@@ -167,6 +213,7 @@ export type ProfileSummary = {
   dominant_elements: string[]
   lacking_elements: string[]
   keywords: string[]
+  chart_identity_summary?: ChartIdentitySummary
 }
 
 export type InsightSummary = {

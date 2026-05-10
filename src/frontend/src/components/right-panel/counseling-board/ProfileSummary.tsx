@@ -1,5 +1,6 @@
 import type { ProfileSummary as ProfileSummaryType } from '@/types/api'
 import KeywordChip from '@/components/ui/KeywordChip'
+import ChartIdentityBadge from '@/components/ui/ChartIdentityBadge'
 
 type Props = {
   summary: ProfileSummaryType
@@ -18,6 +19,11 @@ export default function ProfileSummary({ summary }: Props) {
       </div>
 
       <p className="text-sm text-sage-800 leading-snug">{summary.one_line_summary}</p>
+
+      {/* Chart identity — compact badge, shown only when backend provides the new field */}
+      {summary.chart_identity_summary && (
+        <ChartIdentityBadge summary={summary.chart_identity_summary} />
+      )}
 
       {/* Element mini bars */}
       <div className="flex gap-1 items-end h-5">
