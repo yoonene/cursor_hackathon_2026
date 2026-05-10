@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
 from pydantic import ValidationError
+
+logger = logging.getLogger("counselor_llm")
 
 from app.core.config import Settings
 from app.schemas.counselor_llm import InitialReadingLLMOutput
@@ -18,29 +22,53 @@ from app.schemas.state import ConversationState
 from app.saju.trad_chart_digest import summarize_digest_for_prompt
 
 
-_SYSTEM_PROMPT = """You are a warm, articulate saju (Four Pillars) counselor speaking in polished English.
+_SYSTEM_PROMPT = """You are a warm, gifted saju (Four Pillars of Destiny) counselor speaking in friendly, accessible English.
 
-You NEVER invent raw chart facts that contradict the provided JSON snapshot. Interpret and narrate ONLY from:
-- lunar-accurate pillars and scores
-- the deterministic interpretation_signals (these are factual rule hits, not fluff)
-- optional `traditional_chart`: Hanja pillar pairs plus English labels (day stem, romanized day pillar, branch animal) and `signals_gloss_en`
+Your goal: make someone who has never heard of saju feel genuinely seen and understood.
 
-When `traditional_chart` / `traditional_chart_plain_en` is present, ground your prose in those facts (Hanja pillars are allowed as-is). All user-visible coaching copy must remain in English.
+STRICT RULES:
+- NEVER contradict the deterministic chart facts in the JSON (pillars, element counts, signals).
+- NEVER use raw Hanja/Chinese characters, romanized technical stems (e.g. "Xin", "Ren"), or jargon like "day master", "branches", "ganzhi" in the assistant_message or any user-facing copy.
+- DO use the plain-English labels provided: animal names (Rabbit, Dog, Tiger…), element names (Fire, Water, Wood, Metal, Earth), and polarity (Yin/Yang) naturally woven into prose.
+- Ground every claim in the supplied data (interpretation_signals, element counts, chart_identity).
 
-Produce believable counselor prose: grounded, nuanced, compassionate. Avoid fortune-cookie fluff.
-Return a single JSON object with exactly these keys and string/list types:
+assistant_message FORMAT — write it in this exact narrative flow, using markdown headers:
+
+**Your Chart Identity**
+Open with one warm sentence naming the day-pillar animal and element colour in plain English, e.g.  
+"You were born under the sign of the White Rabbit — a Yin Metal soul whose quiet elegance runs far deeper than it first appears."
+Then 1–2 sentences on what that energy archetype generally means.
+
+**Personality**
+2–3 sentences drawn from dominant elements and personality signals. Speak directly to the person ("You…"). No bullet lists — flowing prose.
+
+**Career & Purpose**
+2–3 sentences on career strengths, drive, and ideal working style sourced from career signals. Practical, grounded.
+
+**Love & Relationships**
+2–3 sentences on how this person loves, connects, and what they need in relationships. Warm, honest.
+
+**Health & Energy**
+1–2 sentences on physical/emotional tendencies and self-care rhythms tied to element balance.
+
+**Your Guiding Rhythm**
+One closing sentence — poetic but concrete — about the conditions under which this person thrives.
+
+Each section should flow naturally. Avoid bullet lists inside assistant_message. Total length: 250–420 words.
+
+Return a single JSON object with exactly these keys (string/list types):
 
 {
-  "assistant_message": "2-5 short paragraphs for chat; natural voice; cite patterns from data",
-  "overall_summary": "one compact paragraph headline for the dashboard",
+  "assistant_message": "<full structured reading in markdown as described above>",
+  "overall_summary": "one compact paragraph headline for the dashboard (no Hanja, plain English)",
   "keywords": ["three core trait chips, lowercase hyphenated okay"],
-  "personality": "one paragraph summary for Personality section",
+  "personality": "one paragraph for Personality section (plain English, no jargon)",
   "relationship_style": "one paragraph for Relationship Style section",
   "career_style": "one paragraph for Career Style section",
   "emotional_pattern": "one paragraph for Emotional Pattern section",
   "strengths": ["bullet", "bullet", "bullet"],
   "cautions": ["bullet", "bullet", "bullet"],
-  "one_line_verdict": "single memorable coaching line under 220 characters"
+  "one_line_verdict": "single memorable coaching line under 220 characters (no Hanja)"
 }
 
 No markdown fences. Output JSON only."""
@@ -79,6 +107,16 @@ def _payload_for_llm(
             "day_master_strength is strong | weak | balanced (support vs drain counter)."
         ),
     }
+    if saju_data.chart_identity is not None:
+        ci = saju_data.chart_identity
+        payload["chart_identity_plain_en"] = {
+            "day_pillar_english_name": ci.day_pillar.english_name,
+            "day_pillar_animal": ci.day_pillar.animal_label,
+            "day_pillar_color": ci.day_pillar.color,
+            "day_master_element": ci.day_master.element_label,
+            "day_master_polarity": ci.day_master.polarity,
+            "day_master_label": ci.day_master.english_name,
+        }
     if saju_data.chart_digest is not None:
         payload["traditional_chart"] = saju_data.chart_digest.model_dump()
         payload["traditional_chart_plain_en"] = summarize_digest_for_prompt(saju_data.chart_digest)
@@ -98,65 +136,82 @@ def _fallback_copy(
     signals_by_section: dict[str, list[str]],
 ) -> InitialReadingLLMOutput:
     name = profile.display_name or "You"
-    trad_open: list[str] = []
-    if saju_data.chart_digest:
-        d = saju_data.chart_digest
-        hanja_kv = "; ".join(f"{k}: {v}" for k, v in sorted(d.pillars_hanja.items()))
-        trad_open.append(
-            f"Four pillars (Hanja): {hanja_kv}. Day stem: {d.day_stem_label_en}; "
-            f"day pillar (romanized): {d.day_pillar_reading_en}; day-branch animal: {d.day_branch_animal_label}."
+
+    identity_intro = ""
+    if saju_data.chart_identity:
+        ci = saju_data.chart_identity
+        animal = ci.day_pillar.animal_label
+        pillar_name = ci.day_pillar.english_name
+        dm_label = ci.day_master.english_name
+        identity_intro = (
+            f"**Your Chart Identity**\n"
+            f"You were born under the sign of the {pillar_name} — "
+            f"a {dm_label} soul with the spirit of the {animal}.\n\n"
         )
-        if d.day_master_strength_en:
-            trad_open.append(f"(Day-master strength: {d.day_master_strength_en})")
 
-    en_signal_lines: list[str] = []
-    if saju_data.chart_digest and saju_data.chart_digest.signals_gloss_en:
-        for sec, glosses in saju_data.chart_digest.signals_gloss_en.items():
-            for g in glosses[:4]:
-                en_signal_lines.append(f"[{sec}] {g}")
+    dominant = ", ".join(e.capitalize() for e in saju_data.dominant_elements) or "a balanced mix of elements"
+    lacking = ", ".join(e.capitalize() for e in saju_data.lacking_elements) if saju_data.lacking_elements else None
 
-    parts: list[str] = []
-    for section in ("personality", "career", "love", "wealth", "cautions"):
-        hits = signals_by_section.get(section, [])
-        if hits:
-            readable = "; ".join(h.replace("_", " ") for h in hits[:8])
-            parts.append(f"[{section}] {readable}")
+    personality_signals = "; ".join(
+        h.replace("_", " ") for h in signals_by_section.get("personality", [])[:4]
+    )
+    career_signals = "; ".join(
+        h.replace("_", " ") for h in signals_by_section.get("career", [])[:4]
+    )
+    love_signals = "; ".join(
+        h.replace("_", " ") for h in signals_by_section.get("love", [])[:4]
+    )
 
-    joined_signals = ". ".join(parts) if parts else ""
-    gloss_block = (" " + " ".join(en_signal_lines)) if en_signal_lines else ""
-    if gloss_block and joined_signals:
-        joined = f"{joined_signals}.{gloss_block}"
-    elif gloss_block:
-        joined = gloss_block.strip()
-    else:
-        joined = joined_signals if joined_signals else "Chart signals are understated; clarify in follow-up."
+    personality_para = (
+        f"**Personality**\n"
+        f"Your chart is led by {dominant} energy"
+        + (f", with {lacking} asking for more room and care" if lacking else "")
+        + (f". Patterns in your chart suggest: {personality_signals}." if personality_signals else ".")
+        + "\n\n"
+    )
+    career_para = (
+        f"**Career & Purpose**\n"
+        + (f"Your career signals point to: {career_signals}." if career_signals else
+           f"Your {dominant} nature brings drive and focus to your professional path.")
+        + "\n\n"
+    )
+    love_para = (
+        f"**Love & Relationships**\n"
+        + (f"In relationships, your chart highlights: {love_signals}." if love_signals else
+           f"Your {dominant} energy shapes how you connect and what you seek in others.")
+        + "\n\n"
+    )
+    health_para = (
+        f"**Health & Energy**\n"
+        f"Tending to your {(saju_data.lacking_elements[0].capitalize() + ' element') if saju_data.lacking_elements else 'inner balance'} "
+        f"is key to keeping your energy steady.\n\n"
+    )
+    closing = (
+        f"**Your Guiding Rhythm**\n"
+        f"You thrive when you honor both the strengths your chart gives you and the gaps it asks you to fill.\n"
+    )
 
-    trad_prefix = (" ".join(trad_open) + " ") if trad_open else ""
+    assistant_message = identity_intro + personality_para + career_para + love_para + health_para + closing
+    assistant_message += "\nAsk me anything to go deeper — love timing, compatibility, career flow, or today's emotional weather."
 
     verdict = (
-        f"{name}," if profile.display_name else "You,"
-    ) + (
-        " lean into rhythms that honor both your strengths and blind spots signaled by the pillars."
+        (f"{name}, " if profile.display_name else "You, ")
+        + "lean into rhythms that honor both your strengths and the balance your chart is asking for."
     )
     return InitialReadingLLMOutput(
-        assistant_message=(
-            trad_prefix
-            + f"Based on your elemental emphasis ({', '.join(saju_data.dominant_elements)} most visible), "
-            + (f"rule-based signals flagged: {joined}. " if joined else "")
-            + "Ask me anything you want to go deeper — love timing, compatibility, career flow, "
-            "or today's emotional weather."
-        ),
+        assistant_message=assistant_message,
         overall_summary=(
-            "A nuanced chart with patterned emphasis from the elemental distribution "
-            "(see dominant vs lacking elements)."
+            f"A chart led by {dominant} energy"
+            + (f", with {lacking} as the area calling for more attention" if lacking else "")
+            + "."
         ),
         keywords=[k for k in saju_data.core_keywords][:3],
-        personality=joined,
-        relationship_style=joined,
-        career_style=joined,
-        emotional_pattern=joined,
+        personality=personality_para.replace("**Personality**\n", "").strip(),
+        relationship_style=love_para.replace("**Love & Relationships**\n", "").strip(),
+        career_style=career_para.replace("**Career & Purpose**\n", "").strip(),
+        emotional_pattern=health_para.replace("**Health & Energy**\n", "").strip(),
         strengths=saju_data.strengths[:3] or ["earnestness", "self-awareness", "willingness to reflect"],
-        cautions=saju_data.cautions[:3] or ["rush-to-close loops", "self-pressure", "over-analysis"],
+        cautions=saju_data.cautions[:3] or ["rushing to conclusions", "self-pressure", "over-analysis"],
         one_line_verdict=verdict,
     )
 
@@ -175,6 +230,7 @@ def generate_initial_counseling_copy(
     signals_by_section = saju_data.interpretation_signals or {}
 
     if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        logger.warning("initial reading fallback — reason=no_credentials")
         return (
             _fallback_copy(profile, saju_data, signals_by_section),
             "fallback_no_credentials",
@@ -201,7 +257,7 @@ def generate_initial_counseling_copy(
             },
         ],
         "temperature": 0.65,
-        "max_tokens": 1800,
+        "max_tokens": 2400,
     }
 
     headers = {
@@ -209,13 +265,25 @@ def generate_initial_counseling_copy(
         "Content-Type": "application/json",
     }
 
+    logger.debug("initial reading LLM call — url=%s model=%s max_tokens=1800", url, settings.clod_strong_model)
+    t0 = time.perf_counter()
     try:
         response = httpx.post(url, json=body, headers=headers, timeout=120.0)
         response.raise_for_status()
         data = response.json()
         choice = data["choices"][0]["message"]["content"]
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.info("initial reading LLM ok — model=%s duration_ms=%d", settings.clod_strong_model, duration_ms)
         return _parse_json_response(choice), "llm_ok"
-    except (httpx.HTTPError, KeyError, ValueError, ValidationError, json.JSONDecodeError):
+    except (httpx.HTTPError, KeyError, ValueError, ValidationError, json.JSONDecodeError) as exc:
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.error(
+            "initial reading LLM failed — %s: %s (duration_ms=%d)",
+            type(exc).__name__,
+            exc,
+            duration_ms,
+        )
+        logger.warning("initial reading fallback — reason=llm_failed")
         return (
             _fallback_copy(profile, saju_data, signals_by_section),
             "fallback_llm_failed",
@@ -234,7 +302,7 @@ Output plain assistant prose only — no markdown code fences or JSON blobs."""
 
 
 def _partner_intake_addon(supplemental_context: str | None) -> str:
-    """When JSON tool payloads ask for counterpart birth data — short polite Korean replies."""
+    """When JSON tool payloads ask for counterpart birth data — always reply in English."""
     if not supplemental_context:
         return ""
     try:
@@ -244,8 +312,7 @@ def _partner_intake_addon(supplemental_context: str | None) -> str:
     tool = blob.get("tool")
 
     overrides = (
-        "\nLANGUAGE OVERRIDE FOR THIS MESSAGE ONLY:\n"
-        "- Write in polite Korean regardless of instructions above mentioning English.\n"
+        "\nLANGUAGE: English only — no Korean, no matter what.\n"
         "- No markdown. At most four short sentences (no headings, no bullets).\n"
         "- Do NOT give long chart-deep interpretation limited to only the querent.\n\n"
         "TASK:\n"
@@ -254,31 +321,30 @@ def _partner_intake_addon(supplemental_context: str | None) -> str:
     if tool == "compatibility_pending":
         reopen = blob.get("re_prompt_ui")
         reopen_line = (
-            "- 사용자가 입력 팝업/폼 다시 표시를 요청한 경우에는, 그 의도를 짧게 수긍합니다.\n"
+            "- The user requested the input form again; briefly acknowledge that.\n"
             if reopen
             else ""
         )
         return overrides + reopen_line + (
-            "- The user asks about fit/compatibility.\n"
-            "- Say plainly that 두 사람 원국을 비교하려면 상대의 생년월일이 필요하다.\n"
-            "- 이름·별명은 선택이라고 안내하고, 생년월일 입력을 부드럽게 요청한다.\n"
-            "- 형식 안내 한 문장: YYYY-MM-DD 또는 yyyy년 m월 d일.\n"
+            "- The user is asking about compatibility.\n"
+            "- Explain warmly that you need the other person's birth date to compare charts.\n"
+            "- Mention their name/nickname is optional.\n"
+            "- Ask for the birth date in YYYY-MM-DD format.\n"
         )
 
     if tool == "compatibility_collect" and not blob.get("parsed_birth_date"):
-        return overrides + "- Birth date 아직 확인되지 않았어요. 같은 형식으로 다시 적어달라 간단히 안내합니다.\n"
+        return overrides + "- The birth date wasn't recognized. Politely ask them to re-enter it in YYYY-MM-DD format.\n"
 
     if tool == "analyze_compatibility":
         return (
-            "\nLANGUAGE OVERRIDE FOR THIS MESSAGE ONLY:\n"
-            "- Write in polite Korean.\n"
+            "\nLANGUAGE: English only — no Korean, no matter what.\n"
             "- Stay strictly grounded in the compatibility JSON (+ counterpart_element_emphasis / "
             "counterpart_profile_for_llm entries if present).\n"
             "- Do NOT ask for birthplace, country, timezone, or city correction — unsupported in this pipeline.\n"
             "- counterpart birth time is OPTIONAL: if `birth_time_known`/`hour_pillar_known` indicates unknown, "
-            "do NOT insist on 시간·장소 입력; 간단히 '시까지 알면 더 정밀하지만 현재 결과는 생년월일 기준 원국입니다' 같은 한 문장으로만 언급하거나 생략해도 된다.\n"
+            "mention in one sentence that more precision is possible with the birth hour, then move on.\n"
             "- Do NOT invent zodiac-year-only animal stories beyond the deterministic JSON snapshots.\n"
-            "- Keep it modest (typically 3–7 short sentences), practical, compassionate.\n\n"
+            "- Keep it concise (typically 3–7 short sentences), practical, compassionate.\n\n"
             "TASK: Summarize the deterministic compatibility snapshot for the user conversationally.\n"
         )
 
@@ -359,6 +425,7 @@ def generate_followup_counseling_reply(
     """Follow-up conversational turn via CLōD / OpenAI-style chat completions (plain text)."""
 
     if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        logger.warning("follow-up fallback — reason=no_credentials")
         return _followup_fallback_text(state, supplemental_context)
 
     url = _chat_url(settings)
@@ -375,6 +442,8 @@ def generate_followup_counseling_reply(
         "Content-Type": "application/json",
     }
 
+    logger.debug("follow-up LLM call — url=%s model=%s max_tokens=1200", url, settings.clod_strong_model)
+    t0 = time.perf_counter()
     try:
         response = httpx.post(url, json=body, headers=headers, timeout=120.0)
         response.raise_for_status()
@@ -382,8 +451,18 @@ def generate_followup_counseling_reply(
         text = data["choices"][0]["message"]["content"].strip()
         if not text:
             raise ValueError("empty assistant content")
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.info("follow-up LLM ok — model=%s duration_ms=%d", settings.clod_strong_model, duration_ms)
         return text, "llm_ok"
-    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError) as exc:
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.error(
+            "follow-up LLM failed — %s: %s (duration_ms=%d)",
+            type(exc).__name__,
+            exc,
+            duration_ms,
+        )
+        logger.warning("follow-up fallback — reason=llm_failed")
         fb, lab = _fallback_followup(state)
         if supplemental_context:
             return (
@@ -424,6 +503,7 @@ async def stream_follow_up_counselor_text(
     """
 
     if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        logger.warning("follow-up stream fallback — reason=no_credentials")
         fb, tag = _followup_fallback_text(state, supplemental_context)
         yield "delta", fb
         yield "end", tag
@@ -443,6 +523,8 @@ async def stream_follow_up_counselor_text(
         "Content-Type": "application/json",
     }
 
+    logger.debug("follow-up stream LLM call — url=%s model=%s", url, settings.clod_strong_model)
+    t0 = time.perf_counter()
     aggregated = ""
     try:
         timeout = httpx.Timeout(120.0, connect=30.0)
@@ -462,8 +544,23 @@ async def stream_follow_up_counselor_text(
         final_text = aggregated.strip()
         if not final_text:
             raise ValueError("empty streamed assistant content")
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.info(
+            "follow-up stream LLM ok — model=%s duration_ms=%d chars=%d",
+            settings.clod_strong_model,
+            duration_ms,
+            len(final_text),
+        )
         yield "end", "llm_ok"
-    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError) as exc:
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.error(
+            "follow-up stream LLM failed — %s: %s (duration_ms=%d)",
+            type(exc).__name__,
+            exc,
+            duration_ms,
+        )
+        logger.warning("follow-up stream fallback — reason=llm_failed")
         fb, lab = _fallback_followup(state)
         if supplemental_context:
             fb = fb + "\n\nEngine note (deterministic):\n" + supplemental_context[:1800]

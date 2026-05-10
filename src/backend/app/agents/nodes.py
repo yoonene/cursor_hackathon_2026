@@ -14,7 +14,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date
+
+logger = logging.getLogger("agents.nodes")
 
 from app.agents.graph_state import AgentGraphState
 from app.builders.followup_board_updates import (
@@ -152,6 +155,7 @@ def router_node(state: AgentGraphState) -> dict:
 
     # 1-e. 신규 요청 의도 분류
     intent = classify_follow_up_intent(settings, message)
+    logger.info("router_node — route=%s", intent.route)
     traces.append(
         AgentTraceStep(
             step="routing",
@@ -349,11 +353,13 @@ def saju_agent_node(state: AgentGraphState) -> dict:
             name = raw.strip() or None
 
     if birth is None:
+        logger.error("saju_agent_node — resolved_partner_birth missing (session=%s)", cs.session_id)
         raise ValueError("saju_agent_node: resolved_partner_birth is required but missing.")
 
     partner = _partner_profile(
         cs.session_id, name, birth, birth_time=birth_time, gender=gender
     )
+    logger.info("saju_agent_node — computing saju for partner=%s", partner.display_name)
     partner_saju = analyze_base_saju(partner)
 
     traces.append(
@@ -389,10 +395,11 @@ def compat_agent_node(state: AgentGraphState) -> dict:
     partner = state.get("partner_profile")
     partner_saju = state.get("partner_saju")
     if partner is None or partner_saju is None:
+        logger.error("compat_agent_node — partner_profile or partner_saju missing (session=%s)", cs.session_id)
         raise ValueError("compat_agent_node: partner_profile and partner_saju are required.")
 
     prev = _prior_active_template(board)
-
+    logger.info("compat_agent_node — analyzing compatibility (session=%s)", cs.session_id)
     compat = analyze_compatibility(cs.user_saju, partner_saju)
     _remember_related(cs, partner, partner_saju)
 
@@ -451,6 +458,7 @@ def fortune_agent_node(state: AgentGraphState) -> dict:
     fd = (intent.fortune_domain if intent else None) or "overall"
     fp = (intent.fortune_period if intent else None) or "this_week"
 
+    logger.info("fortune_agent_node — domain=%s period=%s (session=%s)", fd, fp, cs.session_id)
     res = analyze_domain_fortune(cs.user_saju, fd, fp, date.today())
     rd, supplemental = attach_domain_fortune(board, res)
     if board.active_reading is not None:
@@ -503,6 +511,7 @@ def timing_agent_node(state: AgentGraphState) -> dict:
     td = (intent.timing_domain if intent else None) or "general"
     at = (intent.action_type if intent else None) or "other"
 
+    logger.info("timing_agent_node — domain=%s action=%s (session=%s)", td, at, cs.session_id)
     res = analyze_favorable_timing(cs.user_saju, td, at, date.today())
     rd, supplemental = attach_timing(board, res)
     if board.active_reading is not None:

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from collections.abc import AsyncIterator
 
 from app.core.config import Settings, get_settings
@@ -13,6 +15,8 @@ from app.schemas.view_models import AgentTraceStep, CounselingBoard
 from app.services.counselor_llm import generate_followup_counseling_reply, stream_follow_up_counselor_text
 from app.services.followup_pipeline import prepare_follow_up_tooling
 from app.services.session_store import InMemorySessionStore
+
+logger = logging.getLogger("chat_svc")
 
 
 def bootstrap_chat_turn(
@@ -56,11 +60,30 @@ def continue_chat(store: InMemorySessionStore, request: ChatRequest) -> ChatResp
 
     state, tooling, settings = bootstrap
 
+    logger.info("follow-up LLM start — session=%s", request.session_id)
+    t0 = time.perf_counter()
     reply, llm_tag = generate_followup_counseling_reply(
         settings,
         state,
         supplemental_context=tooling.supplemental_context,
     )
+    duration_ms = int((time.perf_counter() - t0) * 1000)
+
+    if llm_tag == "llm_ok":
+        logger.info(
+            "follow-up LLM done — session=%s tag=%s duration_ms=%d",
+            request.session_id,
+            llm_tag,
+            duration_ms,
+        )
+    else:
+        logger.warning(
+            "follow-up LLM fallback — session=%s tag=%s duration_ms=%d",
+            request.session_id,
+            llm_tag,
+            duration_ms,
+        )
+
     state.messages.append(ConversationMessage(role="assistant", content=reply))
     thinking = None if llm_tag == "llm_ok" else llm_tag
     state.thinking_state = thinking
@@ -124,6 +147,8 @@ async def iterate_continue_chat_sse(store: InMemorySessionStore, request: ChatRe
     }
     yield _sse_pack("prelude", prelude)
 
+    logger.info("follow-up stream start — session=%s", request.session_id)
+    t0 = time.perf_counter()
     accumulated = ""
     llm_tag = "skipped"
     async for kind, payload in stream_follow_up_counselor_text(
@@ -136,6 +161,22 @@ async def iterate_continue_chat_sse(store: InMemorySessionStore, request: ChatRe
             yield _sse_pack("delta", {"text": payload})
         elif kind == "end":
             llm_tag = payload
+
+    duration_ms = int((time.perf_counter() - t0) * 1000)
+    if llm_tag == "llm_ok":
+        logger.info(
+            "follow-up stream done — session=%s tag=%s duration_ms=%d",
+            request.session_id,
+            llm_tag,
+            duration_ms,
+        )
+    else:
+        logger.warning(
+            "follow-up stream fallback — session=%s tag=%s duration_ms=%d",
+            request.session_id,
+            llm_tag,
+            duration_ms,
+        )
 
     assistant_text = accumulated.strip() or "(empty response)"
     state.messages.append(ConversationMessage(role="assistant", content=assistant_text))

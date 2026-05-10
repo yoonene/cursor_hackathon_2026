@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from app.builders.board_builder import build_initial_counseling_board
 from app.builders.report_builder import build_saju_report
 from app.core.config import get_settings
@@ -11,6 +13,8 @@ from app.schemas.view_models import AgentTraceStep, ReportInitializedEvent
 from app.services.counselor_llm import generate_initial_counseling_copy
 from app.saju.compute_saju import analyze_base_saju
 from app.services.session_store import InMemorySessionStore
+
+logger = logging.getLogger("reading_svc")
 
 
 def _user_profile_id(session_id: str) -> str:
@@ -36,8 +40,30 @@ def start_reading(
 
     settings = get_settings()
     user_profile = build_user_profile(request)
+
+    logger.info(
+        "saju calc start — session=%s birth_date=%s",
+        request.session_id,
+        request.birth_date,
+    )
     user_saju = analyze_base_saju(user_profile)
+    logger.info(
+        "saju calc done — session=%s dominant=%s lacking=%s",
+        request.session_id,
+        user_saju.dominant_elements,
+        user_saju.lacking_elements,
+    )
+
+    logger.info("LLM initial reading start — session=%s", request.session_id)
     llm_out, llm_status = generate_initial_counseling_copy(settings, user_profile, user_saju)
+    if llm_status == "llm_ok":
+        logger.info("LLM initial reading done — session=%s tag=%s", request.session_id, llm_status)
+    else:
+        logger.warning(
+            "LLM initial reading fallback — session=%s tag=%s",
+            request.session_id,
+            llm_status,
+        )
 
     saju_report = build_saju_report(user_profile, user_saju, llm_out)
     counseling_board = build_initial_counseling_board(user_profile, saju_report)
@@ -65,6 +91,7 @@ def start_reading(
     )
     conversation_state.memory.recent_insights.append(saju_report.one_line_verdict)
     store.set(conversation_state)
+    logger.info("session created — session=%s", request.session_id)
 
     agent_trace = [
         AgentTraceStep(

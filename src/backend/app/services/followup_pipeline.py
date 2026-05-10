@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time as _time
 from dataclasses import dataclass
 from datetime import date, time
 from typing import Any
+
+logger = logging.getLogger("pipeline")
 
 from app.builders.followup_board_updates import (
     attach_compatibility_pending,
@@ -348,9 +352,20 @@ def prepare_follow_up_tooling(
 
     from app.agents.graph import run_counselor_graph  # 순환 임포트 방지
 
-    return run_counselor_graph(
+    logger.info("LangGraph run start — session=%s", state.session_id)
+    t0 = _time.perf_counter()
+    result = run_counselor_graph(
         settings,
         state,
         latest_message,
         structured_partner=structured_partner,
     )
+    duration_ms = int((_time.perf_counter() - t0) * 1000)
+    trace_count = len(result.extra_traces)
+    logger.info(
+        "LangGraph run done — session=%s traces=%d duration_ms=%d",
+        state.session_id,
+        trace_count,
+        duration_ms,
+    )
+    return result
