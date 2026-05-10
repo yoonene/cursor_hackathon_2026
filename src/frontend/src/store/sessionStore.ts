@@ -4,7 +4,10 @@ import type {
   CounselingBoard,
   RecommendedTab,
   CurrentStage,
+  StartReadingRequest,
 } from '@/types/api'
+import { startReading } from '@/api/reading'
+import { sendChat, resetSession } from '@/api/chat'
 
 export type Phase = 'intake' | 'reading' | 'counseling'
 
@@ -28,27 +31,13 @@ type SessionState = {
 }
 
 type SessionActions = {
-  setPhase: (phase: Phase) => void
+  submitIntake: (request: Omit<StartReadingRequest, 'session_id'>) => Promise<void>
+  submitMessage: (text: string) => Promise<void>
   setActiveTab: (tab: RecommendedTab) => void
-  addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
-  setReadingResult: (payload: {
-    sajuReport: SajuReport
-    counselingBoard: CounselingBoard
-    assistantMessage: string
-    currentStage: CurrentStage
-    recommendedTab: RecommendedTab
-  }) => void
-  setChatResult: (payload: {
-    sajuReport: SajuReport
-    counselingBoard: CounselingBoard
-    assistantMessage: string
-    currentStage: CurrentStage
-    recommendedTab: RecommendedTab
-  }) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-  reset: () => void
+  reset: () => Promise<void>
 }
+
+const makeId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const initialState: SessionState = {
   sessionId: `session-${Date.now()}`,
@@ -62,64 +51,73 @@ const initialState: SessionState = {
   error: null,
 }
 
-export const useSessionStore = create<SessionState & SessionActions>((set) => ({
+export const useSessionStore = create<SessionState & SessionActions>((set, get) => ({
   ...initialState,
-
-  setPhase: (phase) => set({ phase }),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
-  addMessage: (message) =>
+  submitIntake: async (request) => {
+    set({ isLoading: true, error: null })
+    try {
+      const res = await startReading({ ...request, session_id: get().sessionId })
+      set((state) => ({
+        phase: 'reading',
+        currentStage: res.current_stage,
+        activeTab: res.recommended_tab,
+        sajuReport: res.saju_report,
+        counselingBoard: res.counseling_board,
+        isLoading: false,
+        messages: [
+          ...state.messages,
+          {
+            id: makeId(),
+            role: 'assistant',
+            content: res.assistant_message,
+            timestamp: Date.now(),
+          },
+        ],
+      }))
+    } catch (e) {
+      set({ isLoading: false, error: 'Something went wrong. Please try again.' })
+      console.error(e)
+    }
+  },
+
+  submitMessage: async (text) => {
+    const userMsg: ChatMessage = { id: makeId(), role: 'user', content: text, timestamp: Date.now() }
     set((state) => ({
-      messages: [
-        ...state.messages,
-        { ...message, id: `msg-${Date.now()}-${Math.random()}`, timestamp: Date.now() },
-      ],
-    })),
+      isLoading: true,
+      error: null,
+      messages: [...state.messages, userMsg],
+    }))
+    try {
+      const res = await sendChat({ session_id: get().sessionId, message: text })
+      set((state) => ({
+        currentStage: res.current_stage,
+        activeTab: res.recommended_tab,
+        sajuReport: res.saju_report,
+        counselingBoard: res.counseling_board,
+        phase: 'counseling',
+        isLoading: false,
+        messages: [
+          ...state.messages,
+          {
+            id: makeId(),
+            role: 'assistant',
+            content: res.assistant_message,
+            timestamp: Date.now(),
+          },
+        ],
+      }))
+    } catch (e) {
+      set({ isLoading: false, error: 'Something went wrong. Please try again.' })
+      console.error(e)
+    }
+  },
 
-  setReadingResult: ({ sajuReport, counselingBoard, assistantMessage, currentStage, recommendedTab }) =>
-    set((state) => ({
-      sajuReport,
-      counselingBoard,
-      currentStage,
-      activeTab: recommendedTab,
-      phase: 'reading',
-      messages: [
-        ...state.messages,
-        {
-          id: `msg-${Date.now()}`,
-          role: 'assistant',
-          content: assistantMessage,
-          timestamp: Date.now(),
-        },
-      ],
-    })),
-
-  setChatResult: ({ sajuReport, counselingBoard, assistantMessage, currentStage, recommendedTab }) =>
-    set((state) => ({
-      sajuReport,
-      counselingBoard,
-      currentStage,
-      activeTab: recommendedTab,
-      phase: currentStage === 'open_counseling' ? 'counseling' : state.phase,
-      messages: [
-        ...state.messages,
-        {
-          id: `msg-${Date.now()}`,
-          role: 'assistant',
-          content: assistantMessage,
-          timestamp: Date.now(),
-        },
-      ],
-    })),
-
-  setLoading: (loading) => set({ isLoading: loading }),
-
-  setError: (error) => set({ error }),
-
-  reset: () =>
-    set({
-      ...initialState,
-      sessionId: `session-${Date.now()}`,
-    }),
+  reset: async () => {
+    const { sessionId } = get()
+    await resetSession(sessionId).catch(() => {})
+    set({ ...initialState, sessionId: `session-${Date.now()}` })
+  },
 }))
