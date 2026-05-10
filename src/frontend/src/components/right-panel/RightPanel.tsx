@@ -14,6 +14,7 @@ export default function RightPanel() {
   const sajuReport = useSessionStore((s) => s.sajuReport)
   const counselingBoard = useSessionStore((s) => s.counselingBoard)
   const phase = useSessionStore((s) => s.phase)
+  const isLoading = useSessionStore((s) => s.isLoading)
 
   if (phase === 'intake') {
     return (
@@ -26,8 +27,11 @@ export default function RightPanel() {
     )
   }
 
+  const isBoardLoading = isLoading && (sajuReport !== null || counselingBoard !== null)
+  const isInitialLoading = isLoading && sajuReport === null && counselingBoard === null
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Tab bar */}
       <div className="flex border-b border-sage-200 bg-warm-white shrink-0">
         {TABS.map((tab) => {
@@ -49,17 +53,75 @@ export default function RightPanel() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'saju_report' && (
-          sajuReport
-            ? <SajuReportTab report={sajuReport} />
-            : <EmptyState message="Your full saju report will appear here." />
+      <div className="flex-1 overflow-y-auto relative">
+        {isInitialLoading ? (
+          <BoardLoadingState />
+        ) : (
+          <>
+            {activeTab === 'saju_report' && (
+              sajuReport
+                ? <SajuReportTab report={sajuReport} />
+                : <EmptyState message="Your full saju report will appear here." />
+            )}
+            {activeTab === 'counseling_board' && (
+              counselingBoard
+                ? <CounselingBoard board={counselingBoard} />
+                : <EmptyState message="The counseling board will open after you begin the conversation." />
+            )}
+          </>
         )}
-        {activeTab === 'counseling_board' && (
-          counselingBoard
-            ? <CounselingBoard board={counselingBoard} />
-            : <EmptyState message="The counseling board will open after you begin the conversation." />
+
+        {/* Overlay loading when board is updating */}
+        {isBoardLoading && (
+          <div className="absolute inset-0 bg-warm-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 animate-fade-in">
+            <BoardSpinner />
+          </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function BoardSpinner() {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-10 h-10">
+        <div className="absolute inset-0 rounded-full border-2 border-sage-200" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-sage-500 animate-spin" />
+      </div>
+      <p className="text-xs text-sage-400 tracking-wide">Updating board…</p>
+    </div>
+  )
+}
+
+function BoardLoadingState() {
+  return (
+    <div className="p-6 space-y-5 animate-pulse-slow">
+      {/* Identity hero skeleton */}
+      <div className="rounded-2xl bg-sage-100 h-28 w-full" />
+
+      {/* Section skeletons */}
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="space-y-2">
+          <div className="h-3 bg-sage-100 rounded w-1/3" />
+          <div className="h-3 bg-sage-100 rounded w-full" />
+          <div className="h-3 bg-sage-100 rounded w-5/6" />
+        </div>
+      ))}
+
+      {/* Chips skeleton */}
+      <div className="flex gap-2 flex-wrap pt-1">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-6 bg-sage-100 rounded-full w-16" />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-center gap-2 pt-4">
+        <div className="relative w-8 h-8">
+          <div className="absolute inset-0 rounded-full border-2 border-sage-200" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-sage-400 animate-spin" />
+        </div>
+        <span className="text-xs text-sage-400">Reading the stars…</span>
       </div>
     </div>
   )

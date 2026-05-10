@@ -8,7 +8,7 @@ import type {
   PartnerCompatibilityPayload,
 } from '@/types/api'
 import { startReadingStream } from '@/api/reading'
-import { sendChat, resetSession } from '@/api/chat'
+import { sendChatStream, sendChat, resetSession } from '@/api/chat'
 
 export type Phase = 'intake' | 'reading' | 'counseling'
 
@@ -115,34 +115,62 @@ export const useSessionStore = create<SessionState & SessionActions>((set, get) 
     const userMsg: ChatMessage = { id: makeId(), role: 'user', content: text, timestamp: Date.now() }
     set((state) => ({
       isLoading: true,
+      isStreaming: false,
       error: null,
       partnerIntakeRequested: false,
       messages: [...state.messages, userMsg],
     }))
-    try {
-      const res = await sendChat({ session_id: get().sessionId, message: text })
-      set((state) => ({
-        currentStage: res.current_stage,
-        activeTab: res.recommended_tab,
-        sajuReport: res.saju_report,
-        counselingBoard: res.counseling_board,
-        phase: 'counseling',
-        isLoading: false,
-        partnerIntakeRequested: res.partner_intake_requested ?? false,
-        messages: [
-          ...state.messages,
-          {
-            id: makeId(),
-            role: 'assistant',
-            content: res.assistant_message,
-            timestamp: Date.now(),
-          },
-        ],
-      }))
-    } catch (e) {
-      set({ isLoading: false, error: 'Something went wrong. Please try again.' })
-      console.error(e)
-    }
+    const msgId = makeId()
+    await sendChatStream({ session_id: get().sessionId, message: text }, {
+      onPrelude: (payload) => {
+        set({
+          currentStage: payload.current_stage,
+          activeTab: payload.recommended_tab,
+          sajuReport: payload.saju_report,
+          counselingBoard: payload.counseling_board,
+          phase: 'counseling',
+          partnerIntakeRequested: payload.partner_intake_requested ?? false,
+        })
+      },
+      onDelta: (chunk) => {
+        set((state) => {
+          const exists = state.messages.some((m) => m.id === msgId)
+          if (!exists) {
+            return {
+              isStreaming: true,
+              messages: [
+                ...state.messages,
+                { id: msgId, role: 'assistant' as const, content: chunk, timestamp: Date.now() },
+              ],
+            }
+          }
+          return {
+            messages: state.messages.map((m) =>
+              m.id === msgId ? { ...m, content: m.content + chunk } : m,
+            ),
+          }
+        })
+      },
+      onComplete: (res) => {
+        set((state) => ({
+          currentStage: res.current_stage,
+          activeTab: res.recommended_tab,
+          sajuReport: res.saju_report,
+          counselingBoard: res.counseling_board,
+          phase: 'counseling',
+          isLoading: false,
+          isStreaming: false,
+          partnerIntakeRequested: res.partner_intake_requested ?? false,
+          messages: state.messages.map((m) =>
+            m.id === msgId ? { ...m, content: res.assistant_message } : m,
+          ),
+        }))
+      },
+      onError: (error) => {
+        console.error('Chat stream error:', error)
+        set({ isLoading: false, isStreaming: false, error: 'Something went wrong. Please try again.' })
+      },
+    })
   },
 
   submitPartner: async (partner) => {
