@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from app.builders.board_builder import build_initial_counseling_board
-from app.builders.report_builder import build_initial_interpretation, build_saju_report
+from app.builders.report_builder import build_saju_report
+from app.core.config import get_settings
 from app.schemas.intake import StartReadingRequest
 from app.schemas.profiles import PersonProfile
 from app.schemas.responses import InitialReadingResponse
 from app.schemas.state import ConversationMessage, ConversationState, ToolCallRecord
 from app.schemas.view_models import AgentTraceStep, ReportInitializedEvent
+from app.services.counselor_llm import generate_initial_counseling_copy
 from app.saju.compute_saju import analyze_base_saju
 from app.services.session_store import InMemorySessionStore
 
@@ -30,20 +32,23 @@ def start_reading(
     request: StartReadingRequest,
     store: InMemorySessionStore,
 ) -> InitialReadingResponse:
-    """Create the initial report snapshot from the fixed intake form."""
+    """인테이크 → 규칙 계산 → LLM 초기 해석 → 스냅샷."""
 
+    settings = get_settings()
     user_profile = build_user_profile(request)
     user_saju = analyze_base_saju(user_profile)
-    saju_report = build_saju_report(user_profile, user_saju)
+    llm_out, llm_status = generate_initial_counseling_copy(settings, user_profile, user_saju)
+
+    saju_report = build_saju_report(user_profile, user_saju, llm_out)
     counseling_board = build_initial_counseling_board(user_profile, saju_report)
-    assistant_message = build_initial_interpretation(user_profile, user_saju, saju_report)
+    assistant_message = llm_out.assistant_message
 
     completed_tool_calls = [
         ToolCallRecord(
             tool_name="analyze_base_saju",
             status="completed",
-            result_summary="Computed deterministic base saju profile.",
-        )
+            result_summary="Computed lunar four-pillars profile and rule-engine signals.",
+        ),
     ]
     conversation_state = ConversationState(
         session_id=request.session_id,
@@ -64,9 +69,15 @@ def start_reading(
     agent_trace = [
         AgentTraceStep(
             step="tool_call",
-            label="Computed base saju profile",
+            label="Computed four pillars (lunar-python) + YAML rule signals",
             tool_name="analyze_base_saju",
             status="completed",
+        ),
+        AgentTraceStep(
+            step="llm_call",
+            label=f"Drafted counselor copy ({llm_status})",
+            tool_name="counselor_llm.initial_reading",
+            status="completed" if llm_status == "llm_ok" else "skipped",
         ),
         AgentTraceStep(
             step="view_model",

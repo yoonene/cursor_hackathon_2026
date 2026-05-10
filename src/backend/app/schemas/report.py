@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from app.schemas.chart_identity import ChartIdentity
 from app.schemas.saju import ElementBalance, ElementName
+from app.schemas.tradition import TraditionalChartDigest
 
 
 class ReportSection(BaseModel):
@@ -25,3 +27,7 @@ class SajuReport(BaseModel):
     strengths: list[str]
     cautions: list[str]
     one_line_verdict: str
+    chart_identity: ChartIdentity | None = None
+    """English-first day pillar / day master payload for UI (optional for legacy fixtures)."""
+    chart_digest: TraditionalChartDigest | None = None
+    """표시 계층용 전통 간지 요약 (`SajuData` 와 동기). 미구현·구버전 응답은 None."""

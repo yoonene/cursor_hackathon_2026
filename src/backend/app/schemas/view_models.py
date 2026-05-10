@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.fortune import FortuneDomain, FortunePeriod, ReadingTone
+from app.schemas.chart_identity import ChartIdentitySummary
 from app.schemas.saju import ElementBalance, ElementName
 
 RecommendedTab = Literal["saju_report", "counseling_board"]
@@ -25,6 +26,8 @@ class ProfileSummary(BaseModel):
     dominant_elements: list[ElementName]
     lacking_elements: list[ElementName]
     keywords: list[str]
+    chart_identity_summary: ChartIdentitySummary | None = None
+    """Compact English labels for board header; absent in legacy mock payloads."""
 
 
 class GeneralReadingTemplate(BaseModel):

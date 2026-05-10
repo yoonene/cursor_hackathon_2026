@@ -1,0 +1,357 @@
+- id: personality_fire_drive
+  description: Fire-dominant charts show visible initiative and expression.
+  priority: 92
+  conditions:
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: fire
+      - fact: element_distribution.fire
+        op: gte
+        value: 4
+  emits:
+    - signal: initiative_high
+      section: personality
+      weight: 3
+    - signal: expressive_presence
+      section: personality
+      weight: 2
+
+- id: personality_wood_growth
+  description: Wood-heavy charts trend toward growth, direction, and development.
+  priority: 88
+  conditions:
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: wood
+      - fact: element_distribution.wood
+        op: gte
+        value: 3
+  emits:
+    - signal: growth_oriented
+      section: personality
+      weight: 3
+
+- id: personality_water_sensitivity
+  description: Water emphasis raises sensitivity and emotional permeability.
+  priority: 84
+  conditions:
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: water
+      - fact: element_distribution.water
+        op: gte
+        value: 3
+  emits:
+    - signal: emotional_sensitivity_high
+      section: personality
+      weight: 3
+
+- id: personality_metal_analysis
+  description: Metal emphasis tends toward analysis, structure, and judgment.
+  priority: 82
+  conditions:
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: metal
+      - fact: element_distribution.metal
+        op: gte
+        value: 3
+  emits:
+    - signal: analytical_focus_high
+      section: personality
+      weight: 3
+
+- id: personality_earth_stability
+  description: Earth-rich charts lean toward steadiness and grounded pacing.
+  priority: 80
+  conditions:
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: earth
+      - fact: element_distribution.earth
+        op: gte
+        value: 3
+  emits:
+    - signal: stability_high
+      section: personality
+      weight: 3
+
+- id: career_leadership
+  description: Strong support and visible fire create leadership capacity.
+  priority: 91
+  conditions:
+    all:
+      - fact: support_score
+        op: gte
+        value: 4
+    any:
+      - fact: dominant_elements
+        op: contains
+        value: fire
+      - fact: day_master_strength
+        op: eq
+        value: strong
+  emits:
+    - signal: leadership_fit
+      section: career
+      weight: 3
+
+- id: career_creative_output
+  description: Strong output score points to expression and creation.
+  priority: 86
+  conditions:
+    all:
+      - fact: output_score
+        op: gte
+        value: 3
+  emits:
+    - signal: creative_fit
+      section: career
+      weight: 3
+
+- id: career_strategy_metal_power
+  description: Metal and power energy favor analysis, structure, and strategy.
+  priority: 85
+  conditions:
+    any:
+      - fact: element_distribution.metal
+        op: gte
+        value: 3
+      - fact: power_score
+        op: gte
+        value: 3
+  emits:
+    - signal: strategy_fit
+      section: career
+      weight: 3
+
+- id: career_operations_earth
+  description: Strong earth supports operations, process, and continuity.
+  priority: 83
+  conditions:
+    all:
+      - fact: element_distribution.earth
+        op: gte
+        value: 3
+  emits:
+    - signal: operations_fit
+      section: career
+      weight: 2
+
+- id: career_people_connection
+  description: Water and wood emphasize empathy, listening, and relationship work.
+  priority: 81
+  conditions:
+    any:
+      - fact: element_distribution.water
+        op: gte
+        value: 3
+      - fact: element_distribution.wood
+        op: gte
+        value: 3
+  emits:
+    - signal: people_oriented_fit
+      section: career
+      weight: 2
+
+- id: love_warmth
+  description: Fire and wood together create direct warmth in relationships.
+  priority: 88
+  conditions:
+    all:
+      - fact: element_distribution.fire
+        op: gte
+        value: 2
+      - fact: element_distribution.wood
+        op: gte
+        value: 2
+  emits:
+    - signal: affection_direct
+      section: love
+      weight: 3
+
+- id: love_depth_water
+  description: Water depth increases emotional nuance and inner sensitivity.
+  priority: 84
+  conditions:
+    all:
+      - fact: element_distribution.water
+        op: gte
+        value: 3
+  emits:
+    - signal: emotional_depth_high
+      section: love
+      weight: 3
+
+- id: love_stability_earth
+  description: Earth strength values consistency and steadiness in commitment.
+  priority: 82
+  conditions:
+    all:
+      - fact: element_distribution.earth
+        op: gte
+        value: 3
+  emits:
+    - signal: relationship_stability_seek
+      section: love
+      weight: 2
+
+- id: love_space_when_tense
+  description: Clash patterns and metal strength increase the need for space.
+  priority: 80
+  conditions:
+    all:
+      - fact: clash_count
+        op: gte
+        value: 1
+    any:
+      - fact: day_master_strength
+        op: eq
+        value: strong
+      - fact: element_distribution.metal
+        op: gte
+        value: 3
+  emits:
+    - signal: needs_personal_space
+      section: love
+      weight: 2
+
+- id: wealth_growth_supported
+  description: Enough wealth energy plus support implies growth potential.
+  priority: 90
+  conditions:
+    all:
+      - fact: wealth_score
+        op: gte
+        value: 3
+    any:
+      - fact: day_master_strength
+        op: in
+        value:
+          - strong
+          - balanced
+      - fact: support_score
+        op: gte
+        value: 4
+  emits:
+    - signal: wealth_growth_potential
+      section: wealth
+      weight: 3
+
+- id: wealth_planning_metal_earth
+  description: Metal plus earth supports planning and disciplined money management.
+  priority: 86
+  conditions:
+    all:
+      - fact: element_distribution.metal
+        op: gte
+        value: 2
+      - fact: element_distribution.earth
+        op: gte
+        value: 2
+  emits:
+    - signal: wealth_planning_strength
+      section: wealth
+      weight: 3
+
+- id: wealth_opportunity_output
+  description: Strong output energy increases appetite for opportunity and motion.
+  priority: 84
+  conditions:
+    all:
+      - fact: output_score
+        op: gte
+        value: 3
+    any:
+      - fact: element_distribution.fire
+        op: gte
+        value: 3
+      - fact: element_distribution.wood
+        op: gte
+        value: 3
+  emits:
+    - signal: wealth_opportunity_sense
+      section: wealth
+      weight: 2
+
+- id: caution_low_earth
+  description: Little earth lowers consistency and recovery stability.
+  priority: 95
+  conditions:
+    all:
+      - fact: element_distribution.earth
+        op: lte
+        value: 1
+  emits:
+    - signal: stability_low
+      section: cautions
+      weight: 3
+
+- id: caution_burnout_fire
+  description: High fire with limited support can cause overdrive and burnout.
+  priority: 94
+  conditions:
+    all:
+      - fact: element_distribution.fire
+        op: gte
+        value: 4
+      - fact: support_score
+        op: lte
+        value: 4
+  emits:
+    - signal: burnout_risk
+      section: cautions
+      weight: 3
+
+- id: caution_overthinking_metal_water
+  description: Water plus metal raises internal loops and analysis fatigue.
+  priority: 90
+  conditions:
+    all:
+      - fact: element_distribution.water
+        op: gte
+        value: 3
+      - fact: element_distribution.metal
+        op: gte
+        value: 3
+  emits:
+    - signal: overthinking_risk
+      section: cautions
+      weight: 3
+
+- id: caution_scatter_fire_without_earth
+  description: Heat without enough earth can scatter attention.
+  priority: 88
+  conditions:
+    all:
+      - fact: element_distribution.fire
+        op: gte
+        value: 3
+      - fact: element_distribution.earth
+        op: lte
+        value: 1
+  emits:
+    - signal: decision_scatter_risk
+      section: cautions
+      weight: 2
+
+- id: caution_guarded_metal
+  description: Strong metal with little water can harden emotional boundaries.
+  priority: 86
+  conditions:
+    all:
+      - fact: element_distribution.metal
+        op: gte
+        value: 4
+      - fact: element_distribution.water
+        op: lte
+        value: 1
+  emits:
+    - signal: relationship_guardedness
+      section: cautions
+      weight: 2

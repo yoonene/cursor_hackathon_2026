@@ -3,12 +3,18 @@ from __future__ import annotations
 from app.schemas.profiles import PersonProfile
 from app.schemas.report import SajuReport
 from app.schemas.view_models import CounselingBoard, ProfileSummary
+from app.saju.chart_identity_builder import chart_identity_summary as build_chart_identity_summary
 
 
 def build_initial_counseling_board(profile: PersonProfile, report: SajuReport) -> CounselingBoard:
     """Build the initial board state shown alongside the full report."""
 
     title = f"{profile.display_name}'s Base Flow" if profile.display_name else "Your Base Flow"
+    ci_sum = (
+        build_chart_identity_summary(report.chart_identity)
+        if report.chart_identity is not None
+        else None
+    )
     profile_summary = ProfileSummary(
         id=f"profile_{profile.id}",
         title=title,
@@ -17,6 +23,7 @@ def build_initial_counseling_board(profile: PersonProfile, report: SajuReport) -
         dominant_elements=report.dominant_elements,
         lacking_elements=report.lacking_elements,
         keywords=report.keywords,
+        chart_identity_summary=ci_sum,
     )
     return CounselingBoard(
         profile_summary=profile_summary,

@@ -16,12 +16,11 @@
 
 2. **`POST /reading/start`**  
    고정 인테이크 폼에 대응하는 최초 리딩을 생성합니다.
-   - `PersonProfile` 조립 → **`analyze_base_saju`**로 결정론적 오행·기둥·텍스트 요약 생성
-   - **`build_saju_report`**로 Full Saju Report 뷰 모델(`SajuReport`) 생성
-   - **`build_initial_counseling_board`**로 상담 보드 초기 스냅샷(`CounselingBoard`: `profile_summary`만 채움, `active_reading`은 `null`)
-   - **`build_initial_interpretation`**으로 채팅 영역용 첫 상담사 메시지(영문, 규칙 기반 문장 조합)
-   - **`InMemorySessionStore`**에 `ConversationState` 저장
-   - 응답: `InitialReadingResponse` (`recommended_tab: "saju_report"`, `ui_event`: `report_initialized`, 선택적 `agent_trace`)
+   - `PersonProfile` 조립 → **`saju_calculator`(lunar_python)** 원국 계산 · **`rule_engine`(YAML 규칙)** 해석 시그널 (**side_projects 로직 차용**, 템플릿 렌더러 미사용)
+   - 로컬 시간대 기본값: `Settings.default_timezone` (기본 `Asia/Seoul`)
+   - **`counselor_llm.generate_initial_counseling_copy`** 가 CLōD/OpenAI 호환 Chat Completions로 **초기 채팅 메시지 + 리포트 섹션 문구(JSON)** 생성; 키·URL·모델 없으면 **시그널 요약 폴백**
+   - **`build_saju_report`** 가 팩트(`SajuData`) + LLM 출력으로 `SajuReport` 생성
+   - **`build_initial_counseling_board`**, 세션 저장, `agent_trace`에 `analyze_base_saju` 및 `llm_call` 포함
 
 ### 아직 HTTP로 노출되지 않음 (스키마·도메인 로직은 존재)
 
@@ -41,9 +40,9 @@ API 계약과 프로젝트 플랜에 맞춰 **다음은 Pydantic 스키마와 �
 - `saju.domain_fortune.analyze_domain_fortune` — 연애/직업/금전 등 도메인별 흐름
 - `saju.favorable_timing.analyze_favorable_timing` — 행동 유형별 유리한 시기
 
-**LangGraph:** `app/agent/graph.py`의 `build_counseling_graph()`가 상담용 그래프 골격을 정의하지만, `app/agent/nodes.py`는 현재 **에이전트 트레이스만 쌓는 플레이스홀더**이고, `app/agent/routing.py`의 `route_counseling`은 `routing_decision`이 없으면 기본으로 일반 상담 분기로 보냅니다. **실제 의도 분류·LLM·도구 호출은 다음 단계 구현**입니다.
+**LangGraph:** `app/agent/` 는 이후 **`POST /chat`** 상담 턴용 스캐폴딩. 초기 리딩의 NLG는 LangGraph 바깥 `services/counselor_llm.py` 에서 처리한다.
 
-**LLM / CLōD:** `app/core/config.py`에 `clod_*` 환경 변수 훅이 있으나, 초기 해석문은 `report_builder.build_initial_interpretation`의 **템플릿 기반**이며 그래프도 LLM을 호출하지 않습니다.
+**LLM / CLōD:** `.env` 에 `CLOD_API_KEY`, `CLOD_BASE_URL`(예: OpenAI 또는 CLōD 게이트 `.../v1`), `CLOD_STRONG_MODEL` 을 두면 초기 리딩이 LLM 생성이 된다. 없으면 자동 폴백.
 
 ---
 
@@ -55,7 +54,10 @@ API 계약과 프로젝트 플랜에 맞춰 **다음은 Pydantic 스키마와 �
 | 웹 | FastAPI, Uvicorn |
 | 검증·모델 | Pydantic v2, pydantic-settings |
 | 에이전트(스캐폴딩) | LangGraph |
-| 패키징 | setuptools (`pyproject.toml`의 `app*` 패키지 탐색) |
+| 만세력 | lunar-python (`saju.saju_calculator`) |
+| 규칙 해석 | PyYAML 규칙 (`app/saju/rules/*.yaml`, `rule_engine`) |
+| LLM 게이트 | httpx → OpenAI 형식 `/v1/chat/completions` (`counselor_llm`) |
+| 패키징 | setuptools (`app*` 및 `rules/*.yaml` package-data) |
 
 의존성은 [`pyproject.toml`](./pyproject.toml)을 참고하세요.
 
@@ -69,23 +71,20 @@ app/
   core/config.py       # Settings (CLōD 등)
   api/                 # HTTP 라우트 (health, reading/start)
   schemas/             # 요청/응답·상태·리포트·보드 뷰 모델 (API 계약 정렬)
-  saju/                # 결정론적 MVP 사주·궁합·도메인 운·타이밍 엔진
-  builders/            # SajuReport, 초기 CounselingBoard, 첫 메시지 문구
-  services/            # reading 파이프라인, 인메모리 세션 저장소
+  saju/                # lunar 계산 YAML 규칙 · compute 파이프
+  builders/            # SajuReport(팩트+LLM)·CounselingBoard 초기 상태
+  services/            # reading, counselor_llm, session_store
   agent/               # LangGraph 상태·라우팅·노드(플레이스홀더)
 tests/                 # pytest — mock JSON 스키마 검증 + `/reading/start` API
 ```
 
 ---
 
-## 결정론적 사주 레이어 (MVP)
+## 규칙 레이어 + NLG 레이어
 
-`compute_saju.analyze_base_saju`는 **동일 입력 → 동일 출력**을 목표로 합니다.
-
-- 간이 사주: 연·월·일·시(시간 미입력 시 정오 기준 가중치 완화) 천간·지지 → 오행 가중 합산, 월절기 대신 **월별 계절 오행 보정**(`SEASONAL_ELEMENT_BY_MONTH`)
-- 오행 균형은 스케일링 후 `dominant_elements` / `lacking_elements` 도출
-- 성격·관계·직업·감정 패턴 문장은 지배·부족 오행 조합에 대한 **규칙 기반 카피**
-- 프로덕션급 만세력 정밀도는 범위 밖이며, [`docs/hackathon_project_plan.md`](../../docs/hackathon_project_plan.md)의 out-of-scope와 동일한 취지입니다.
+- **규칙(결정론)** : `analyze_base_saju` → 같은 생년월일·시·타임존이면 같은 기둥·오행 분포·`interpretation_signals` 를 낸다 (`SajuData.calculation_metrics` 등).
+- **서술(생성형)** : `build_saju_report` 텍스트는 LLM 결과에 의존하며, API 키가 없을 때만 시그널명 기반 폴백 카피를 쓴다.
+- 인테이크에 시간대 필드가 없으므로 `default_timezone`(기본 서울)을 쓴다; 프로덕션 만세력/절입시 정밀 검수는 필요 시 추가한다.
 
 ---
 

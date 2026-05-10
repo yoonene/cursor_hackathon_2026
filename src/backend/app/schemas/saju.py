@@ -1,23 +1,25 @@
 from __future__ import annotations
 
 from datetime import date, time
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.chart_identity import ChartIdentity
 from app.schemas.intake import GenderType
+from app.schemas.tradition import TraditionalChartDigest
 
 ElementName = Literal["wood", "fire", "earth", "metal", "water"]
 
 
 class ElementBalance(BaseModel):
-    """Five-element balance used throughout the product."""
+    """천간+지장간 기준 오행 발생 횟수 (side_projects `ElementDistribution` 와 동일 의미의 정수합)."""
 
-    wood: int = Field(ge=0, le=9)
-    fire: int = Field(ge=0, le=9)
-    earth: int = Field(ge=0, le=9)
-    metal: int = Field(ge=0, le=9)
-    water: int = Field(ge=0, le=9)
+    wood: int = Field(ge=0, le=32)
+    fire: int = Field(ge=0, le=32)
+    earth: int = Field(ge=0, le=32)
+    metal: int = Field(ge=0, le=32)
+    water: int = Field(ge=0, le=32)
 
     def as_dict(self) -> dict[str, int]:
         return self.model_dump()
@@ -46,7 +48,8 @@ class SajuData(BaseModel):
     year_pillar: PillarData
     month_pillar: PillarData
     day_pillar: PillarData
-    hour_pillar: PillarData
+    hour_pillar: PillarData | None = None
+    """출생 시각 미입력 시 None."""
     day_master: ElementName
     elements: ElementBalance
     dominant_elements: list[ElementName]
@@ -60,3 +63,11 @@ class SajuData(BaseModel):
     strengths: list[str]
     cautions: list[str]
     calculation_notes: list[str] = Field(default_factory=list)
+    calculation_metrics: dict[str, Any] = Field(default_factory=dict)
+    """lunar_python + 일간 판정 등 엔진 팩트 (LLM 입력)."""
+    interpretation_signals: dict[str, list[str]] = Field(default_factory=dict)
+    """규칙 엔진이 섹션별로 발화한 시그널 코드 (LLM 입력)."""
+    chart_digest: TraditionalChartDigest | None = None
+    """만세력 한자 간지·일간·일주·띠·시그널 한글 요약 (풀이 표시용)."""
+    chart_identity: ChartIdentity | None = None
+    """English-first visualization identity (day pillar / day master)."""

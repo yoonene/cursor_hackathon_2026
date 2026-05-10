@@ -1,104 +1,62 @@
+"""lunar_python 원국 계산 + YAML 규칙 엔진. 서술(NLG)은 LLM 레이어가 담당한다."""
+
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import date, time
+from typing import Any
 
+from app.core.config import get_settings
 from app.schemas.profiles import PersonProfile
-from app.schemas.saju import ElementBalance, PillarData, SajuData
+from app.schemas.saju import ElementBalance, ElementName, PillarData, SajuData
 from app.saju.common import (
-    BRANCHES,
     ELEMENT_CAUTIONS,
     ELEMENT_KEYWORDS,
     ELEMENT_OPENINGS,
     ELEMENT_SHADOWS,
     ELEMENT_STRENGTHS,
-    SEASONAL_ELEMENT_BY_MONTH,
-    STEMS,
-    dominant_elements_from_balance,
     lacking_elements_from_balance,
 )
+from app.saju.lunar_chart_models import CalculationResult, PillarCN
+from app.saju.lunar_constants import (
+    BRANCH_TO_PRIMARY_ELEMENT,
+    GAN_TO_STEM_ROMAN,
+    STEM_TO_ELEMENT,
+    ZHI_TO_BRANCH_EN,
+)
+from app.saju.rule_engine import RuleEngine
+from app.saju.saju_calculator import SajuCalculationRequest, SajuCalculator
+from app.saju.chart_identity_builder import build_chart_identity
+from app.saju.trad_chart_digest import build_traditional_chart_digest
 
 
-def _build_pillar(stem_index: int, branch_index: int) -> PillarData:
-    stem_name, stem_element = STEMS[stem_index % len(STEMS)]
-    branch_name, branch_element = BRANCHES[branch_index % len(BRANCHES)]
-    return PillarData(
-        stem_name=stem_name,
-        stem_element=stem_element,
-        branch_name=branch_name,
-        branch_element=branch_element,
+def _raw_distribution_as_balance(calculation: CalculationResult) -> ElementBalance:
+    """lunar 계산층 원시 카운트를 그대로 담는다 (side_projects API `elements` 와 같은 척도)."""
+    dist = calculation.elements.model_dump()
+    return ElementBalance(
+        wood=dist["wood"],
+        fire=dist["fire"],
+        earth=dist["earth"],
+        metal=dist["metal"],
+        water=dist["water"],
     )
 
 
-def _hour_branch_index(birth_time: time | None) -> int:
-    hour = birth_time.hour if birth_time else 12
-    return ((hour + 1) // 2) % 12
+def _lacking_fallback_from_balance(balance: ElementBalance) -> list[ElementName]:
+    """원시 분포에서 0건인 오행이 없을 때 규약용으로 최소 카운트를 부족으로 본다."""
+    return lacking_elements_from_balance(balance)
 
 
-def _scale_raw_scores(raw_scores: dict[str, float]) -> ElementBalance:
-    max_score = max(raw_scores.values())
-    scaled: dict[str, int] = {}
-    for element, raw in raw_scores.items():
-        normalized = 1 + round((raw / max_score) * 4)
-        scaled[element] = max(1, min(5, normalized))
-    return ElementBalance(**scaled)
+def _pillar_cn_to_schema(pc: PillarCN) -> PillarData:
+    return PillarData(
+        stem_name=GAN_TO_STEM_ROMAN.get(pc.gan, pc.gan),
+        stem_element=STEM_TO_ELEMENT[pc.gan],
+        branch_name=ZHI_TO_BRANCH_EN.get(pc.zhi, pc.zhi),
+        branch_element=BRANCH_TO_PRIMARY_ELEMENT[pc.zhi],
+    )
 
 
-def _relationship_style(dominant: str, lacking: str) -> str:
-    opening = {
-        "wood": "You tend to move toward connection when there is a sense of growth and shared direction.",
-        "fire": "You tend to move toward connection quickly when your heart catches warmth.",
-        "earth": "You tend to show care through steadiness, presence, and making space for the other person.",
-        "metal": "You tend to watch carefully before opening, but once trust forms, your loyalty is clean and deliberate.",
-        "water": "You tend to read between the lines and feel the emotional undercurrent before you speak plainly.",
-    }[dominant]
-    undercurrent = {
-        "wood": "Still, when direction is unclear, your patience can thin faster than people expect.",
-        "fire": "Still, strong feelings can flare before you have fully decided what you want to say.",
-        "earth": "Still, you can stay in an uneven dynamic too long because you want to hold the bond together.",
-        "metal": "Still, when hurt, you may become cooler and harder to read than you intend.",
-        "water": "Still, your softer worries can remain unspoken until they become heavier inside.",
-    }[lacking]
-    return f"{opening} {undercurrent}"
-
-
-def _career_style(dominant: str, lacking: str) -> str:
-    opening = {
-        "wood": "You do best in work that has movement, learning, and a sense of upward growth.",
-        "fire": "You do best in work where your presence matters and momentum can build around your decisions.",
-        "earth": "You do best in work that lets you build trust slowly and turn effort into something tangible.",
-        "metal": "You do best in work that values judgment, standards, and thoughtful refinement.",
-        "water": "You do best in work that rewards intuition, timing, and understanding what is not said aloud.",
-    }[dominant]
-    undercurrent = {
-        "wood": "When structure is too loose, though, your energy can scatter across too many paths.",
-        "fire": "When the pace becomes too hot, though, you may commit before the longer rhythm is clear.",
-        "earth": "When nothing changes for too long, though, your strength can quietly harden into stagnation.",
-        "metal": "When the environment is chaotic, though, your mind can spend too much energy correcting it.",
-        "water": "When the atmosphere feels uncertain, though, you may wait longer than necessary to make the move.",
-    }[lacking]
-    return f"{opening} {undercurrent}"
-
-
-def _emotional_pattern(dominant: str, lacking: str) -> str:
-    opening = {
-        "wood": "Emotionally, you move by sensing whether life is still growing or quietly closing in.",
-        "fire": "Emotionally, your reactions rise quickly and honestly, even when you try to stay composed.",
-        "earth": "Emotionally, you hold yourself together by grounding the people and situations around you.",
-        "metal": "Emotionally, you process by sorting what feels true from what feels noisy or excessive.",
-        "water": "Emotionally, you absorb atmosphere deeply and often feel more than you show.",
-    }[dominant]
-    undercurrent = {
-        "wood": "If clarity is missing, restlessness can build beneath the surface.",
-        "fire": "If the feeling is not answered, heat can stay in the chest longer than it seems from outside.",
-        "earth": "If you keep carrying too much, heaviness can arrive only after you have already pushed through.",
-        "metal": "If the moment feels messy, the heart can tighten behind a calm face.",
-        "water": "If the feeling has nowhere to go, you may drift into quiet overthinking.",
-    }[lacking]
-    return f"{opening} {undercurrent}"
-
-
-def _build_keywords(dominant_elements: list[str], lacking_elements: list[str], day_master: str) -> list[str]:
+def _build_keywords(
+    dominant_elements: list[ElementName], lacking_elements: list[ElementName], day_master: str
+) -> list[str]:
     keywords: list[str] = []
     for element in dominant_elements:
         for keyword in ELEMENT_KEYWORDS[element]:
@@ -118,56 +76,56 @@ def _build_keywords(dominant_elements: list[str], lacking_elements: list[str], d
     return keywords[:3]
 
 
-def analyze_base_saju(profile: PersonProfile) -> SajuData:
-    """Generate deterministic MVP saju data from the fixed intake form."""
+_calculator: SajuCalculator | None = None
+_rule_engine: RuleEngine | None = None
+
+
+def _get_calculator() -> SajuCalculator:
+    global _calculator
+    if _calculator is None:
+        _calculator = SajuCalculator()
+    return _calculator
+
+
+def _get_rule_engine() -> RuleEngine:
+    global _rule_engine
+    if _rule_engine is None:
+        _rule_engine = RuleEngine()
+    return _rule_engine
+
+
+def analyze_base_saju(profile: PersonProfile, *, timezone: str | None = None) -> SajuData:
+    """만세력·오행·규칙 시그널까지 결정론적으로 계산한다."""
 
     if profile.birth_date is None:
         raise ValueError("birth_date is required to analyze base saju")
 
-    birth_date = profile.birth_date
-    birth_time = profile.birth_time
-    birth_time_known = birth_time is not None
+    settings = get_settings()
+    tz = timezone or settings.default_timezone
 
-    year_stem_index = (birth_date.year - 4) % 10
-    year_branch_index = (birth_date.year - 4) % 12
-    month_stem_index = ((birth_date.year * 12) + birth_date.month + 3) % 10
-    month_branch_index = (birth_date.month + 1) % 12
-    ordinal = birth_date.toordinal()
-    day_stem_index = (ordinal + 6) % 10
-    day_branch_index = (ordinal + 2) % 12
-    hour_branch_index = _hour_branch_index(birth_time)
-    hour_stem_index = (day_stem_index * 2 + hour_branch_index) % 10
-
-    year_pillar = _build_pillar(year_stem_index, year_branch_index)
-    month_pillar = _build_pillar(month_stem_index, month_branch_index)
-    day_pillar = _build_pillar(day_stem_index, day_branch_index)
-    hour_pillar = _build_pillar(hour_stem_index, hour_branch_index)
-
-    raw_scores: dict[str, float] = defaultdict(float)
-    pillar_weights = (
-        (year_pillar.stem_element, 1.0),
-        (year_pillar.branch_element, 1.0),
-        (month_pillar.stem_element, 1.6),
-        (month_pillar.branch_element, 1.6),
-        (day_pillar.stem_element, 2.0),
-        (day_pillar.branch_element, 1.2),
-        (hour_pillar.stem_element, 1.0 if birth_time_known else 0.5),
-        (hour_pillar.branch_element, 1.0 if birth_time_known else 0.5),
+    req = SajuCalculationRequest(
+        birth_date=profile.birth_date,
+        birth_time=profile.birth_time,
+        timezone=tz,
+        gender=profile.gender,
+        locale="en",
     )
-    for element, weight in pillar_weights:
-        raw_scores[element] += weight
+    calculation = _get_calculator().calculate(req)
+    interpretation = _get_rule_engine().evaluate(calculation)
+    chart_digest = build_traditional_chart_digest(calculation, interpretation.signal_codes())
+    chart_identity = build_chart_identity(calculation.chart.day_pillar)
 
-    seasonal_element = SEASONAL_ELEMENT_BY_MONTH[birth_date.month]
-    raw_scores[seasonal_element] += 0.8
-
-    elements = _scale_raw_scores(raw_scores)
-    dominant_elements = dominant_elements_from_balance(elements)
-    lacking_elements = lacking_elements_from_balance(elements)
-    day_master = day_pillar.stem_element
+    balance = _raw_distribution_as_balance(calculation)
+    raw_dom: list[str] = list(calculation.metrics["dominant_elements"])  # type: ignore[assignment]
+    raw_lacking: list[str] = list(calculation.metrics["lacking_elements"])  # type: ignore[assignment]
+    dominant_elements: list[ElementName] = raw_dom  # type: ignore[assignment]
+    lacking_elements: list[ElementName] = raw_lacking or _lacking_fallback_from_balance(balance)
+    day_master: ElementName = calculation.metrics["day_master_element"]  # type: ignore[assignment]
 
     primary = dominant_elements[0]
     lacking = lacking_elements[0]
-    strengths = []
+
+    strengths: list[str] = []
     strengths.extend(ELEMENT_STRENGTHS[primary])
     if len(dominant_elements) > 1:
         strengths.append(ELEMENT_STRENGTHS[dominant_elements[1]][0])
@@ -183,34 +141,41 @@ def analyze_base_saju(profile: PersonProfile) -> SajuData:
         f"{ELEMENT_OPENINGS[primary]} At the same time, {ELEMENT_SHADOWS[lacking]}."
     )
 
-    calculation_notes: list[str] = []
-    if not birth_time_known:
-        calculation_notes.append(
-            "Birth time was not provided, so the hour pillar uses a balanced midday reference."
+    chart = calculation.chart
+    notes: list[str] = []
+    if not calculation.metrics.get("birth_time_known"):
+        notes.append(
+            "Birth time was not provided; hour pillar is omitted and analysis depth is date-only."
         )
+
+    metrics_dump: dict[str, Any] = dict(calculation.metrics)
 
     return SajuData(
         id=profile.id,
         display_name=profile.display_name,
-        birth_date=birth_date,
-        birth_time=birth_time,
-        birth_time_known=birth_time_known,
+        birth_date=profile.birth_date,
+        birth_time=profile.birth_time,
+        birth_time_known=bool(calculation.metrics.get("birth_time_known")),
         gender=profile.gender,
-        year_pillar=year_pillar,
-        month_pillar=month_pillar,
-        day_pillar=day_pillar,
-        hour_pillar=hour_pillar,
+        year_pillar=_pillar_cn_to_schema(chart.year_pillar),
+        month_pillar=_pillar_cn_to_schema(chart.month_pillar),
+        day_pillar=_pillar_cn_to_schema(chart.day_pillar),
+        hour_pillar=_pillar_cn_to_schema(chart.hour_pillar) if chart.hour_pillar else None,
         day_master=day_master,
-        elements=elements,
+        elements=balance,
         dominant_elements=dominant_elements,
         lacking_elements=lacking_elements,
         core_keywords=core_keywords,
         overall_summary_seed=overall_summary_seed,
         personality_summary=personality_summary,
-        relationship_style=_relationship_style(primary, lacking),
-        career_style=_career_style(primary, lacking),
-        emotional_pattern=_emotional_pattern(primary, lacking),
+        relationship_style=personality_summary,
+        career_style=personality_summary,
+        emotional_pattern=personality_summary,
         strengths=strengths,
         cautions=cautions,
-        calculation_notes=calculation_notes,
+        calculation_notes=notes,
+        calculation_metrics=metrics_dump,
+        interpretation_signals=interpretation.signal_codes(),
+        chart_digest=chart_digest,
+        chart_identity=chart_identity,
     )
