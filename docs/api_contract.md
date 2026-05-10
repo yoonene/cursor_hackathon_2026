@@ -2,8 +2,9 @@
 
 ## Version
 
-**v7 — Compatibility Intake via `partner` Field + SSE Streaming**  
-(v7: `ChatRequest.partner` 필드 추가로 궁합 팝업 결과를 구조화 전송; `ChatResponse.partner_intake_requested` 플래그 추가; `POST /chat/stream` SSE 스트리밍 엔드포인트 추가; `AgentTraceStep.step` enum 확장. v6 변경 내용: English-first `chart_identity` and English `chart_digest` strings on `saju_report`.)
+**v8 — LangGraph Multi-Agent Architecture**  
+(v8: 백엔드 내부가 LangGraph `StateGraph` 기반 멀티-에이전트 구조로 재설계됨. `router_node`→`saju_agent_node`→`compat_agent_node` 위임 흐름 적용. `agent_trace.tool_name` 값이 에이전트별 네임스페이스(`saju_agent.*`, `compat_agent.*`, `fortune_agent.*`, `timing_agent.*`)로 변경됨. 외부 API 스키마는 v7과 동일하게 유지.  
+v7: `ChatRequest.partner` 필드 추가로 궁합 팝업 결과를 구조화 전송; `ChatResponse.partner_intake_requested` 플래그 추가; `POST /chat/stream` SSE 스트리밍 엔드포인트 추가; `AgentTraceStep.step` enum 확장.)
 
 ---
 
@@ -80,22 +81,40 @@
           │
           │ user follow-up message
           ▼
-┌────────────────────┐        POST /chat        ┌──────────────────────────────┐
-│       User         │ ───────────────────────▶ │            Backend           │
-└────────────────────┘                         │ 1. Understand message        │
-                                               │ 2. Decide next reading       │
-                                               │ 3. Run tool if needed        │
-                                               │ 4. Build latest board state  │
-                                               └──────────────┬───────────────┘
-                                                              │
-                                                              │ ChatResponse
-                                                              ▼
-                                               ┌──────────────────────────────┐
-                                               │           Frontend           │
-                                               │ - Chat response              │
-                                               │ - Counseling Board update    │
-                                               │ - Full Report still available│
-                                               └──────────────────────────────┘
+┌────────────────────┐      POST /chat       ┌──────────────────────────────────────────┐
+│       User         │ ────────────────────▶ │  Backend — LangGraph Multi-Agent Graph   │
+└────────────────────┘                       │                                          │
+                                             │  router_node                             │
+                                             │    ├─ repair state coherence             │
+                                             │    ├─ classify intent (LLM + keyword)    │
+                                             │    └─ route to next agent                │
+                                             │         │                                │
+                                             │         ├─ saju_agent_node               │
+                                             │         │    analyze_base_saju(partner)  │
+                                             │         │         ↓ (delegates result)   │
+                                             │         │    compat_agent_node           │
+                                             │         │    analyze_compatibility()     │
+                                             │         │                                │
+                                             │         ├─ fortune_agent_node            │
+                                             │         │    analyze_domain_fortune()    │
+                                             │         │                                │
+                                             │         ├─ timing_agent_node             │
+                                             │         │    analyze_favorable_timing()  │
+                                             │         │                                │
+                                             │         └─ collect_partner_node          │
+                                             │              (수집 대기 + 팝업 신호)       │
+                                             │                                          │
+                                             │  counselor_llm (LLM 답변 생성)           │
+                                             └──────────────┬───────────────────────────┘
+                                                            │
+                                                            │ ChatResponse
+                                                            ▼
+                                             ┌──────────────────────────────┐
+                                             │           Frontend           │
+                                             │ - Chat response              │
+                                             │ - Counseling Board update    │
+                                             │ - Full Report still available│
+                                             └──────────────────────────────┘
 ```
 
 ---
@@ -746,9 +765,21 @@ type ChatResponse = {
   },
   "agent_trace": [
     {
+      "step": "routing",
+      "label": "classified_followup route=favorable_timing",
+      "tool_name": null,
+      "status": "completed"
+    },
+    {
       "step": "tool_call",
-      "label": "Analyzed favorable timing for confession",
-      "tool_name": "analyze_favorable_timing",
+      "label": "timing_agent: timing:love:confession",
+      "tool_name": "timing_agent.analyze_favorable_timing",
+      "status": "completed"
+    },
+    {
+      "step": "llm_call",
+      "label": "Follow-up counselor turn (llm_ok, stream)",
+      "tool_name": "counselor_llm.follow_up_stream",
       "status": "completed"
     }
   ]
@@ -963,7 +994,7 @@ type AgentTraceStep = {
   step:
     | "tool_call"      // 사주 계산 / 운세 도구 실행
     | "view_model"     // UI 뷰 모델 빌드
-    | "graph_node"     // 내부 파이프라인 노드
+    | "graph_node"     // 내부 LangGraph 노드
     | "routing"        // 인텐트 라우팅 결정
     | "llm_call";      // LLM 호출 (counselor reply)
   label: string;
@@ -971,6 +1002,22 @@ type AgentTraceStep = {
   status: "pending" | "completed" | "skipped" | "failed";
 };
 ```
+
+### `tool_name` 네임스페이스 (v8 이후)
+
+백엔드가 LangGraph 멀티-에이전트 구조로 변경되면서 `tool_name` 값이 에이전트별 네임스페이스를 포함합니다.
+
+| 에이전트 | `tool_name` 예시 |
+|---|---|
+| 라우터 | `null` (routing step) |
+| 사주 에이전트 | `saju_agent.analyze_base_saju` |
+| 궁합 에이전트 | `compat_agent.analyze_compatibility` |
+| 운세 에이전트 | `fortune_agent.analyze_domain_fortune` |
+| 타이밍 에이전트 | `timing_agent.analyze_favorable_timing` |
+| 수집 대기 | `compatibility.await_partner_birth_date` |
+| LLM | `counselor_llm.follow_up_stream` |
+
+궁합 요청 시 `saju_agent.analyze_base_saju` → `compat_agent.analyze_compatibility` 순서로 트레이스가 연속 등장합니다. 이는 궁합 에이전트가 사주 에이전트에게 상대 원국 계산을 위임하는 흐름입니다.
 
 ---
 
@@ -1501,8 +1548,10 @@ switch (active_reading?.template) {
 
 ## 14.1 Required mock response files
 
+실제 저장 위치: `docs/mocks/`.
+
 ```text
-mocks/
+docs/mocks/
   01_initial_reading_response.json
   02_counseling_start_general_reading.json
   03_compatibility_pending.json
