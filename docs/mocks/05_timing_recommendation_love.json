@@ -1,0 +1,121 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "Then let's look at when your words are most likely to land gently. The flow around May 14 looks the softest for opening your heart.",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+    "dominant_elements": ["fire"],
+    "lacking_elements": ["earth", "water"],
+    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "You may appear open and direct on the surface, while quietly watching the other person's response very carefully underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "You tend to thrive more in environments with movement, growth, and room to shape things than in static settings."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
+    },
+    "strengths": ["drive", "resilience", "intuitive judgment"],
+    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+      "dominant_elements": ["fire"],
+      "lacking_elements": ["earth", "water"],
+      "keywords": ["direct", "deep-feeling", "change-oriented"]
+    },
+    "active_reading": {
+      "id": "timing_love_confession",
+      "semantic_key": "timing:love:confession",
+      "template": "timing_recommendation",
+      "title": "Best Time to Confess",
+      "domain": "love",
+      "action_type": "confession",
+      "headline_keyword": "Forward Momentum",
+      "one_line_summary": "The middle of the week opens most gently for expressing your feelings.",
+      "recommended_window": {
+        "label": "Strongest Window",
+        "date_range": "Around May 14",
+        "reason": "Your words are more likely to land softly, and the other person may be more open to receiving them."
+      },
+      "timeline": [
+        { "label": "Mon-Tue", "keyword": "Observe", "tone": "muted" },
+        { "label": "Wed-Thu", "keyword": "Talk", "tone": "highlight" },
+        { "label": "Fri", "keyword": "Move Forward", "tone": "strong" }
+      ],
+      "caution_window": {
+        "label": "Use Caution",
+        "date_range": "Around May 12",
+        "reason": "You may feel more hurried than the situation actually requires."
+      }
+    },
+    "insight_summaries": [
+      {
+        "id": "insight_compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "label": "Strong pull with Minsoo",
+        "type": "compatibility_result",
+        "short_summary": "82 points - pace needs care"
+      },
+      {
+        "id": "insight_timing_love_confession",
+        "semantic_key": "timing:love:confession",
+        "label": "Strong confession window",
+        "type": "timing_recommendation",
+        "short_summary": "Around May 14"
+      }
+    ],
+    "history": [
+      {
+        "id": "compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "template": "compatibility_result",
+        "title": "Relationship Flow with Minsoo",
+        "summary": "82 points - strong attraction",
+        "created_at": "2026-05-09T19:20:00Z",
+        "updated_at": "2026-05-09T19:20:00Z"
+      },
+      {
+        "id": "timing_love_confession",
+        "semantic_key": "timing:love:confession",
+        "template": "timing_recommendation",
+        "title": "Best Time to Confess",
+        "summary": "The flow is softest around May 14",
+        "created_at": "2026-05-09T19:25:00Z",
+        "updated_at": "2026-05-09T19:25:00Z"
+      }
+    ]
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "compatibility_result",
+    "to_template": "timing_recommendation",
+    "target_id": "timing_love_confession"
+  },
+  "agent_trace": [
+    {
+      "step": "tool_call",
+      "label": "Analyzed favorable timing for confession",
+      "tool_name": "analyze_favorable_timing",
+      "status": "completed"
+    }
+  ]
+}

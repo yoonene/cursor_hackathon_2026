@@ -1,0 +1,98 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "When you are ready to move roles, anchor the paperwork first.A window toward the end of the next fortnight carries cleaner structure.",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+    "dominant_elements": ["fire"],
+    "lacking_elements": ["earth", "water"],
+    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "You may appear open and direct on the surface, while quietly watching the other person's response very carefully underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "You tend to thrive more in environments with movement, growth, and room to shape things than in static settings."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
+    },
+    "strengths": ["drive", "resilience", "intuitive judgment"],
+    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+      "dominant_elements": ["fire"],
+      "lacking_elements": ["earth", "water"],
+      "keywords": ["direct", "deep-feeling", "change-oriented"]
+    },
+    "active_reading": {
+      "id": "timing_career_job_change",
+      "semantic_key": "timing:career:job_change",
+      "template": "timing_recommendation",
+      "title": "Best Time for a Job Move",
+      "domain": "career",
+      "action_type": "job_change",
+      "headline_keyword": "Open Window",
+      "one_line_summary": "There is a better window ahead for moving with structure instead of pressure.",
+      "recommended_window": {
+        "label": "Strongest Window",
+        "date_range": "Around May 18",
+        "reason": "Momentum supports decisive movement once your materials and narrative are tidy."
+      },
+      "timeline": [
+        { "label": "Now", "keyword": "Prepare", "tone": "muted" },
+        { "label": "Soon", "keyword": "Reach Out", "tone": "highlight" },
+        { "label": "Next", "keyword": "Decide", "tone": "strong" }
+      ],
+      "caution_window": {
+        "label": "Use Caution",
+        "date_range": "Around May 12",
+        "reason": "Offers can feel more urgent here than they truly are underneath."
+      }
+    },
+    "insight_summaries": [
+      {
+        "id": "insight_timing_career_move",
+        "semantic_key": "timing:career:job_change",
+        "label": "Job move window",
+        "type": "timing_recommendation",
+        "short_summary": "Around May 18"
+      }
+    ],
+    "history": [
+      {
+        "id": "history_timing_career_move",
+        "semantic_key": "timing:career:job_change",
+        "template": "timing_recommendation",
+        "title": "Best Time for a Job Move",
+        "summary": "Structure-friendly window toward May 18.",
+        "created_at": "2026-05-09T21:05:00Z",
+        "updated_at": "2026-05-09T21:05:00Z"
+      }
+    ]
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "fortune_flow",
+    "to_template": "timing_recommendation",
+    "target_id": "timing_career_job_change"
+  },
+  "agent_trace": []
+}
