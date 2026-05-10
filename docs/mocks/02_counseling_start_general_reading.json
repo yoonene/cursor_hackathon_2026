@@ -1,0 +1,63 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "Tell me what has been on your mind lately, and we can look at one thread at a time.",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+    "dominant_elements": ["fire"],
+    "lacking_elements": ["earth", "water"],
+    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "You may appear open and direct on the surface, while quietly watching the other person's response very carefully underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "You tend to thrive more in environments with movement, growth, and room to shape things than in static settings."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
+    },
+    "strengths": ["drive", "resilience", "intuitive judgment"],
+    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+      "dominant_elements": ["fire"],
+      "lacking_elements": ["earth", "water"],
+      "keywords": ["direct", "deep-feeling", "change-oriented"]
+    },
+    "active_reading": {
+      "id": "general_counseling_opening",
+      "semantic_key": "general:opening",
+      "template": "general_reading",
+      "title": "Opening the counseling space",
+      "headline": "What matters most now",
+      "body": "The full chart is anchored. Ask about love, timing, career, or anything else that feels alive for you.",
+      "highlighted_traits": ["direct", "deep-feeling"],
+      "prompt_to_user": "What has been weighing on you lately?"
+    },
+    "insight_summaries": [],
+    "history": []
+  },
+  "ui_event": {
+    "type": "tab_recommended",
+    "recommended_tab": "counseling_board"
+  },
+  "agent_trace": []
+}
