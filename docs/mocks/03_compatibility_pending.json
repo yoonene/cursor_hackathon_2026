@@ -1,0 +1,65 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "If you share their birth date when you have it, I can read the pull between you more clearly.",
+  "current_stage": "collecting_compatibility_info",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+    "dominant_elements": ["fire"],
+    "lacking_elements": ["earth", "water"],
+    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "You may appear open and direct on the surface, while quietly watching the other person's response very carefully underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "You tend to thrive more in environments with movement, growth, and room to shape things than in static settings."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
+    },
+    "strengths": ["drive", "resilience", "intuitive judgment"],
+    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+      "dominant_elements": ["fire"],
+      "lacking_elements": ["earth", "water"],
+      "keywords": ["direct", "deep-feeling", "change-oriented"]
+    },
+    "active_reading": {
+      "id": "compat_pending_partner",
+      "semantic_key": "compatibility:user:partner",
+      "template": "compatibility_pending",
+      "title": "Reading the connection",
+      "left_person": { "name": "Yoonhye" },
+      "right_person": {},
+      "status_message": "Reading the flow between you two...",
+      "missing_fields": ["counterpart_birth_date"]
+    },
+    "insight_summaries": [],
+    "history": []
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "general_reading",
+    "to_template": "compatibility_pending",
+    "target_id": "compat_pending_partner"
+  },
+  "agent_trace": []
+}
