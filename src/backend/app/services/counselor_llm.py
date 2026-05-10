@@ -75,6 +75,96 @@ No markdown fences. Output JSON only."""
 
 _JSON_OBJECT_RE = re.compile(r"\{[\s\S]*\}")
 
+_AMSG_KEY = '"assistant_message"'
+
+
+class _AssistantMessageExtractor:
+    """LLM이 스트리밍으로 내보내는 JSON에서 assistant_message 필드 값을 실시간 추출한다."""
+
+    SEEK_KEY = 0
+    SEEK_COLON = 1
+    SEEK_QUOTE = 2
+    IN_VALUE = 3
+    DONE = 4
+
+    def __init__(self) -> None:
+        self._buf = ""
+        self._state = self.SEEK_KEY
+        self._pos = 0
+
+    def feed(self, chunk: str) -> str:
+        """새 청크를 받아 assistant_message 값 중 이번에 드러난 부분을 반환한다."""
+        if self._state == self.DONE:
+            return ""
+        self._buf += chunk
+        return self._scan()
+
+    def _scan(self) -> str:
+        result: list[str] = []
+        buf = self._buf
+        i = self._pos
+
+        if self._state == self.SEEK_KEY:
+            idx = buf.find(_AMSG_KEY, i)
+            if idx < 0:
+                self._pos = max(0, len(buf) - len(_AMSG_KEY))
+                return ""
+            i = idx + len(_AMSG_KEY)
+            self._state = self.SEEK_COLON
+
+        if self._state == self.SEEK_COLON:
+            while i < len(buf):
+                if buf[i] == ":":
+                    i += 1
+                    self._state = self.SEEK_QUOTE
+                    break
+                i += 1
+            else:
+                self._pos = i
+                return ""
+
+        if self._state == self.SEEK_QUOTE:
+            while i < len(buf):
+                if buf[i] == '"':
+                    i += 1
+                    self._state = self.IN_VALUE
+                    break
+                i += 1
+            else:
+                self._pos = i
+                return ""
+
+        if self._state == self.IN_VALUE:
+            while i < len(buf):
+                c = buf[i]
+                if c == "\\" and i + 1 < len(buf):
+                    nc = buf[i + 1]
+                    if nc == "n":
+                        result.append("\n")
+                    elif nc == "t":
+                        result.append("\t")
+                    elif nc == '"':
+                        result.append('"')
+                    elif nc == "\\":
+                        result.append("\\")
+                    elif nc == "r":
+                        result.append("\r")
+                    else:
+                        result.append("\\")
+                        result.append(nc)
+                    i += 2
+                    continue
+                if c == '"':
+                    self._state = self.DONE
+                    self._pos = i + 1
+                    break
+                result.append(c)
+                i += 1
+            else:
+                self._pos = i
+
+        return "".join(result)
+
 
 def _payload_for_llm(
     profile: PersonProfile,
@@ -257,7 +347,7 @@ def generate_initial_counseling_copy(
             },
         ],
         "temperature": 0.65,
-        "max_tokens": 2400,
+        "max_tokens": 1400,
     }
 
     headers = {
@@ -288,6 +378,99 @@ def generate_initial_counseling_copy(
             _fallback_copy(profile, saju_data, signals_by_section),
             "fallback_llm_failed",
         )
+
+
+async def stream_initial_counseling_copy(
+    settings: Settings,
+    profile: PersonProfile,
+    saju_data: SajuData,
+) -> AsyncIterator[tuple[str, Any]]:
+    """초기 리딩을 SSE 스트리밍으로 생성한다.
+
+    Yields:
+        ``("delta", str)``           — assistant_message 텍스트 조각
+        ``("result", output, tag)``  — 최종 파싱 결과 (llm_ok | fallback_*)
+    """
+    calculation_metrics = saju_data.calculation_metrics or {}
+    signals_by_section = saju_data.interpretation_signals or {}
+
+    if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        logger.warning("initial reading stream fallback — reason=no_credentials")
+        yield "result", _fallback_copy(profile, saju_data, signals_by_section), "fallback_no_credentials"
+        return
+
+    def _chat_url_inner(base_url: str) -> str:
+        base = base_url.rstrip("/")
+        return f"{base}/chat/completions" if base.endswith("/v1") else f"{base}/v1/chat/completions"
+
+    url = _chat_url_inner(settings.clod_base_url)
+    user_prompt = json.dumps(
+        _payload_for_llm(profile, saju_data, calculation_metrics, signals_by_section),
+        ensure_ascii=False,
+    )
+    body = {
+        "model": settings.clod_strong_model,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": "Chart JSON follows. Produce the counselor JSON described.\n" + user_prompt,
+            },
+        ],
+        "temperature": 0.65,
+        "max_tokens": 1400,
+        "stream": True,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.clod_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    logger.debug("initial reading stream LLM call — url=%s model=%s", url, settings.clod_strong_model)
+    t0 = time.perf_counter()
+    full_text = ""
+    extractor = _AssistantMessageExtractor()
+
+    try:
+        timeout = httpx.Timeout(120.0, connect=30.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            async with client.stream("POST", url, json=body, headers=headers) as response:
+                response.raise_for_status()
+                async for raw_line in response.aiter_lines():
+                    if not raw_line.startswith("data: "):
+                        continue
+                    payload = raw_line.removeprefix("data: ").strip()
+                    if payload == "[DONE]":
+                        break
+                    frag = _sse_openai_collect_delta(payload)
+                    if frag:
+                        full_text += frag
+                        delta = extractor.feed(frag)
+                        if delta:
+                            yield "delta", delta
+
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.info(
+            "initial reading stream LLM ok — model=%s duration_ms=%d",
+            settings.clod_strong_model,
+            duration_ms,
+        )
+        try:
+            result = _parse_json_response(full_text)
+            yield "result", result, "llm_ok"
+        except (ValueError, ValidationError, json.JSONDecodeError) as exc:
+            logger.error("initial reading stream JSON parse failed — %s: %s", type(exc).__name__, exc)
+            yield "result", _fallback_copy(profile, saju_data, signals_by_section), "fallback_llm_failed"
+
+    except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        logger.error(
+            "initial reading stream LLM failed — %s: %s (duration_ms=%d)",
+            type(exc).__name__,
+            exc,
+            duration_ms,
+        )
+        yield "result", _fallback_copy(profile, saju_data, signals_by_section), "fallback_llm_failed"
 
 
 _FOLLOWUP_SYSTEM = """You are a warm, articulate Four Pillars (saju) counselor continuing an ongoing chat in polished English only.

@@ -7,6 +7,7 @@ import PartnerIntakeModal from './PartnerIntakeModal'
 export default function ChatArea() {
   const messages = useSessionStore((s) => s.messages)
   const isLoading = useSessionStore((s) => s.isLoading)
+  const isStreaming = useSessionStore((s) => s.isStreaming)
   const reset = useSessionStore((s) => s.reset)
   const phase = useSessionStore((s) => s.phase)
   const partnerIntakeRequested = useSessionStore((s) => s.partnerIntakeRequested)
@@ -52,7 +53,7 @@ export default function ChatArea() {
           <ChatMessage key={msg.id} message={msg} />
         ))}
 
-        {isLoading && <TypingIndicator />}
+        {isLoading && !isStreaming && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
 
