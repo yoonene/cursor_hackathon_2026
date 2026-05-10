@@ -4,6 +4,7 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.api.routes_chat import router as chat_router
@@ -22,6 +23,14 @@ def create_app() -> FastAPI:
     logger.info("Starting %s — env=%s", settings.app_name, settings.environment)
 
     app = FastAPI(title=settings.app_name)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.middleware("http")
     async def log_requests(request: Request, call_next) -> Response:
