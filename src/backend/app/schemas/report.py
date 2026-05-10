@@ -30,4 +30,4 @@ class SajuReport(BaseModel):
     chart_identity: ChartIdentity | None = None
     """English-first day pillar / day master payload for UI (optional for legacy fixtures)."""
     chart_digest: TraditionalChartDigest | None = None
-    """표시 계층용 전통 간지 요약 (`SajuData` 와 동기). 미구현·구버전 응답은 None."""
+    """Traditional digest aligned with `SajuData`; optional for legacy fixtures."""

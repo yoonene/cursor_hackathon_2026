@@ -21,9 +21,9 @@ _SYSTEM_PROMPT = """You are a warm, articulate saju (Four Pillars) counselor spe
 You NEVER invent raw chart facts that contradict the provided JSON snapshot. Interpret and narrate ONLY from:
 - lunar-accurate pillars and scores
 - the deterministic interpretation_signals (these are factual rule hits, not fluff)
-- optional `traditional_chart`: Hanja pillar pairs plus Korean labels — day stem 오행 이름 (e.g., 신금), day pillar 한글 간지음 (e.g., 신묘), branch animal (띠), and `signals_ko` glossed lines
+- optional `traditional_chart`: Hanja pillar pairs plus English labels (day stem, romanized day pillar, branch animal) and `signals_gloss_en`
 
-When `traditional_chart` / `traditional_chart_plain_ko` is present, weave in terse Korean astrology labels alongside English (parentheses fine), especially day stem and day pillar; do not mistranslate or contradict them.
+When `traditional_chart` / `traditional_chart_plain_en` is present, ground your prose in those facts (Hanja pillars are allowed as-is). All user-visible coaching copy must remain in English.
 
 Produce believable counselor prose: grounded, nuanced, compassionate. Avoid fortune-cookie fluff.
 Return a single JSON object with exactly these keys and string/list types:
@@ -79,7 +79,7 @@ def _payload_for_llm(
     }
     if saju_data.chart_digest is not None:
         payload["traditional_chart"] = saju_data.chart_digest.model_dump()
-        payload["traditional_chart_plain_ko"] = summarize_digest_for_prompt(saju_data.chart_digest)
+        payload["traditional_chart_plain_en"] = summarize_digest_for_prompt(saju_data.chart_digest)
     return payload
 
 
@@ -99,19 +99,19 @@ def _fallback_copy(
     trad_open: list[str] = []
     if saju_data.chart_digest:
         d = saju_data.chart_digest
-        hanja_kv = "; ".join(f"{k}:{v}" for k, v in sorted(d.pillars_hanja.items()))
+        hanja_kv = "; ".join(f"{k}: {v}" for k, v in sorted(d.pillars_hanja.items()))
         trad_open.append(
-            f"네 기둥(한자) {hanja_kv}. 일간 {d.day_stem_oheng_ko}, 일주 {d.ilju_ganji_hangul} "
-            f"({d.ilju_branch_animal_ko} 띠에 해당하는 일지)."
+            f"Four pillars (Hanja): {hanja_kv}. Day stem: {d.day_stem_label_en}; "
+            f"day pillar (romanized): {d.day_pillar_reading_en}; day-branch animal: {d.day_branch_animal_label}."
         )
-        if d.day_master_strength_ko:
-            trad_open.append(f"(일간 강약 참고: {d.day_master_strength_ko}.)")
+        if d.day_master_strength_en:
+            trad_open.append(f"(Day-master strength: {d.day_master_strength_en})")
 
-    ko_signal_lines: list[str] = []
-    if saju_data.chart_digest and saju_data.chart_digest.signals_ko:
-        for sec, glosses in saju_data.chart_digest.signals_ko.items():
+    en_signal_lines: list[str] = []
+    if saju_data.chart_digest and saju_data.chart_digest.signals_gloss_en:
+        for sec, glosses in saju_data.chart_digest.signals_gloss_en.items():
             for g in glosses[:4]:
-                ko_signal_lines.append(f"[{sec}] {g}")
+                en_signal_lines.append(f"[{sec}] {g}")
 
     parts: list[str] = []
     for section in ("personality", "career", "love", "wealth", "cautions"):
@@ -121,11 +121,11 @@ def _fallback_copy(
             parts.append(f"[{section}] {readable}")
 
     joined_signals = ". ".join(parts) if parts else ""
-    ko_block = (" " + " ".join(ko_signal_lines)) if ko_signal_lines else ""
-    if ko_block and joined_signals:
-        joined = f"{joined_signals}.{ko_block}"
-    elif ko_block:
-        joined = ko_block.strip()
+    gloss_block = (" " + " ".join(en_signal_lines)) if en_signal_lines else ""
+    if gloss_block and joined_signals:
+        joined = f"{joined_signals}.{gloss_block}"
+    elif gloss_block:
+        joined = gloss_block.strip()
     else:
         joined = joined_signals if joined_signals else "Chart signals are understated; clarify in follow-up."
 

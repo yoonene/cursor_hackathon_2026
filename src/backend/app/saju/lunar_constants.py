@@ -86,6 +86,22 @@ ZHI_TO_BRANCH_EN: Dict[str, str] = {
     "亥": "Pig",
 }
 
+# Earthly branch names in ASCII (pinyin-style; API / English copy)
+ZHI_TO_ROMAN: Dict[str, str] = {
+    "子": "Zi",
+    "丑": "Chou",
+    "寅": "Yin",
+    "卯": "Mao",
+    "辰": "Chen",
+    "巳": "Si",
+    "午": "Wu",
+    "未": "Wei",
+    "申": "Shen",
+    "酉": "You",
+    "戌": "Xu",
+    "亥": "Hai",
+}
+
 BRANCH_TO_PRIMARY_ELEMENT: Dict[str, str] = {
     "子": "water",
     "丑": "earth",

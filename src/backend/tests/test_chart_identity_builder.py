@@ -33,7 +33,7 @@ def test_xin_mao_maps_to_white_rabbit_and_yin_metal() -> None:
     assert ci.day_pillar.ganji_hanja == "辛卯"
     assert ci.day_pillar.stem_hanja == "辛"
     assert ci.day_pillar.branch_hanja == "卯"
-    assert ci.day_pillar.ganji_hangul == "신묘"
+    assert ci.day_pillar.ganji_reading_en == "Xin Mao"
     assert ci.day_pillar.animal == "rabbit"
     assert ci.day_pillar.animal_label == "Rabbit"
     assert ci.day_pillar.color == "white"
@@ -43,7 +43,7 @@ def test_xin_mao_maps_to_white_rabbit_and_yin_metal() -> None:
     assert dm.element == "metal"
     assert dm.element_label == "Metal"
     assert dm.polarity == "yin"
-    assert dm.stem_hangul == "신"
+    assert dm.stem_roman == "Xin"
     assert dm.english_name == "Yin Metal"
     assert dm.display_label == "辛 · Yin Metal"
 

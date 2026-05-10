@@ -68,6 +68,6 @@ class SajuData(BaseModel):
     interpretation_signals: dict[str, list[str]] = Field(default_factory=dict)
     """규칙 엔진이 섹션별로 발화한 시그널 코드 (LLM 입력)."""
     chart_digest: TraditionalChartDigest | None = None
-    """만세력 한자 간지·일간·일주·띠·시그널 한글 요약 (풀이 표시용)."""
+    """Traditional chart digest with English glosses (Hanja pillars preserved)."""
     chart_identity: ChartIdentity | None = None
     """English-first visualization identity (day pillar / day master)."""

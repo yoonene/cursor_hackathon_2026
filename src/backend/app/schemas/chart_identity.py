@@ -6,8 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-"""Aligned with app.schemas.saju.ElementName (avoid importing saju ↔ circular deps)."""
-
+# Aligned with app.schemas.saju.ElementName (avoid importing saju ↔ circular deps).
 ElementKey = Literal["wood", "fire", "earth", "metal", "water"]
 
 PolarityToken = Literal["yin", "yang"]
@@ -15,7 +14,8 @@ PolarityToken = Literal["yin", "yang"]
 
 class DayPillarIdentity(BaseModel):
     ganji_hanja: str
-    ganji_hangul: str
+    ganji_reading_en: str
+    """Romanized stem + branch, e.g. “Xin Mao”."""
     stem_hanja: str
     branch_hanja: str
     english_name: str
@@ -26,7 +26,8 @@ class DayPillarIdentity(BaseModel):
 
 class DayMasterIdentity(BaseModel):
     stem_hanja: str
-    stem_hangul: str
+    stem_roman: str
+    """Pinyin-style stem name, e.g. “Xin”."""
     element: ElementKey
     element_label: str
     polarity: PolarityToken

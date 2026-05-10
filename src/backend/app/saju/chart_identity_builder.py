@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import cast
 
 from app.saju.lunar_chart_models import PillarCN
-from app.saju.lunar_constants import STEM_TO_ELEMENT, STEM_TO_POLARITY, STEM_TO_KOREAN, ZHI_TO_BRANCH_EN
+from app.saju.lunar_constants import (
+    GAN_TO_STEM_ROMAN,
+    STEM_TO_ELEMENT,
+    STEM_TO_POLARITY,
+    ZHI_TO_BRANCH_EN,
+)
+from app.saju.trad_chart_digest import ganzhi_reading_en
 from app.schemas.chart_identity import (
     ChartIdentity,
     ChartIdentitySummary,
@@ -16,7 +22,6 @@ from app.schemas.chart_identity import (
 )
 from app.schemas.saju import ElementName
 
-# Heavenly stems → Yin/Yang + element (five phases) visualization palette
 _ELEMENT_DISPLAY_EN: dict[str, str] = {
     "wood": "Wood",
     "fire": "Fire",
@@ -41,40 +46,16 @@ _ELEMENT_COLOR_TOKEN: dict[str, str] = {
     "water": "black",
 }
 
-_ZHI_SYLLABLE_KO: dict[str, str] = {
-    "子": "자",
-    "丑": "축",
-    "寅": "인",
-    "卯": "묘",
-    "辰": "진",
-    "巳": "사",
-    "午": "오",
-    "未": "미",
-    "申": "신",
-    "酉": "유",
-    "戌": "술",
-    "亥": "해",
-}
-
-
-def _stem_korean_initial(gan: str) -> str:
-    ko = STEM_TO_KOREAN[gan]
-    return ko[0] if ko else gan
-
-
-def _ganji_hangul(gan: str, zhi: str) -> str:
-    return f"{_stem_korean_initial(gan)}{_ZHI_SYLLABLE_KO.get(zhi, zhi)}"
-
 
 def _animal_slug(animal_label: str) -> str:
     return animal_label.lower()
 
 
 def build_chart_identity(pillar: PillarCN) -> ChartIdentity:
-    """Derive identities from calendar day pillar (일주 한자 간지).
+    """Derive identities from the calendar day pillar.
 
-    Day pillar symbolic English name follows “{Element color adj.} {Branch animal}”
-    (covers all 60 Jiazi-cycle pairs deterministically — same pattern as Xin Mao → White Rabbit).
+    Day pillar symbolic English name: “{element color} {branch animal}”
+    (deterministic for all 60 pillar pairs, e.g. Xin Mao → White Rabbit).
     """
     gan, zhi = pillar.gan, pillar.zhi
     element = cast(ElementName, STEM_TO_ELEMENT[gan])
@@ -83,7 +64,7 @@ def build_chart_identity(pillar: PillarCN) -> ChartIdentity:
     polarity_en = "Yin" if polarity == "yin" else "Yang"
     element_cap = _ELEMENT_DISPLAY_EN[element]
 
-    stem_hangul = _stem_korean_initial(gan)
+    stem_roman = GAN_TO_STEM_ROMAN.get(gan, gan)
     branch_label = ZHI_TO_BRANCH_EN[zhi]
     color_adj = _ELEMENT_COLOR_ADJ_EN[element]
     color_token = _ELEMENT_COLOR_TOKEN[element]
@@ -91,7 +72,7 @@ def build_chart_identity(pillar: PillarCN) -> ChartIdentity:
 
     day_pillar = DayPillarIdentity(
         ganji_hanja=pillar.value,
-        ganji_hangul=_ganji_hangul(gan, zhi),
+        ganji_reading_en=ganzhi_reading_en(gan, zhi),
         stem_hanja=gan,
         branch_hanja=zhi,
         english_name=pillar_en,
@@ -103,7 +84,7 @@ def build_chart_identity(pillar: PillarCN) -> ChartIdentity:
     dm_en = f"{polarity_en} {element_cap}"
     day_master = DayMasterIdentity(
         stem_hanja=gan,
-        stem_hangul=stem_hangul,
+        stem_roman=stem_roman,
         element=element,
         element_label=element_cap,
         polarity=polarity,

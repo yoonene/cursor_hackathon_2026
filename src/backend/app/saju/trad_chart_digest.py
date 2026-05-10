@@ -1,63 +1,36 @@
-"""PillarCN(한자) → 한글 읽기·띠·일주 요약 생성."""
+"""PillarCN (Hanja) → English-readable digest lines for APIs and prompting."""
 
 from __future__ import annotations
 
 import json
 
 from app.saju.lunar_chart_models import CalculationResult
-from app.saju.lunar_constants import STEM_TO_KOREAN
+from app.saju.lunar_constants import (
+    GAN_TO_STEM_ROMAN,
+    STEM_TO_ENGLISH_LABEL,
+    ZHI_TO_BRANCH_EN,
+    ZHI_TO_ROMAN,
+)
 from app.schemas.tradition import TraditionalChartDigest
-from app.saju.signal_gloss_ko import gloss_signals_by_section
+from app.saju.signal_gloss_en import gloss_signals_by_section
 
 
-# 지지 한 글자 음(간지 호칭용, 申≠辛 구분 위해 지지 표기 고정)
-ZHI_SYLLABLE_KO: dict[str, str] = {
-    "子": "자",
-    "丑": "축",
-    "寅": "인",
-    "卯": "묘",
-    "辰": "진",
-    "巳": "사",
-    "午": "오",
-    "未": "미",
-    "申": "신",
-    "酉": "유",
-    "戌": "술",
-    "亥": "해",
-}
-
-ZHI_ANIMAL_KO: dict[str, str] = {
-    "子": "쥐",
-    "丑": "소",
-    "寅": "호랑이",
-    "卯": "토끼",
-    "辰": "용",
-    "巳": "뱀",
-    "午": "말",
-    "未": "양",
-    "申": "원숭이",
-    "酉": "닭",
-    "戌": "개",
-    "亥": "돼지",
-}
+def ganzhi_reading_en(gan: str, zhi: str) -> str:
+    """Romanized stem + branch, e.g. Xin Mao."""
+    gr = GAN_TO_STEM_ROMAN.get(gan, gan)
+    zr = ZHI_TO_ROMAN.get(zhi, zhi)
+    return f"{gr} {zr}"
 
 
-def _stem_syllable(gan: str) -> str:
-    """예: 신금 → 신"""
-    label = STEM_TO_KOREAN[gan]
-    return label[0] if label else gan
-
-
-def _pillar_hangul_pair(p_gan: str, p_zhi: str) -> str:
-    return f"{_stem_syllable(p_gan)}{ZHI_SYLLABLE_KO.get(p_zhi, p_zhi)}"
-
-
-def _pillar_line_ko(name: str, gan: str, zhi: str, hanja_pair: str) -> str:
-    stem_ko = STEM_TO_KOREAN[gan]
-    zi = ZHI_SYLLABLE_KO.get(zhi, zhi)
-    animal = ZHI_ANIMAL_KO.get(zhi, "")
-    animal_part = f" · 띠 {animal}" if animal else ""
-    return f"{name}주 {hanja_pair} — 천간 {stem_ko}, 지지 {zi}({animal}){animal_part}"
+def _pillar_line_en(kind: str, gan: str, zhi: str, hanja_pair: str) -> str:
+    stem_en = STEM_TO_ENGLISH_LABEL[gan]
+    branch_animal = ZHI_TO_BRANCH_EN[zhi]
+    stem_r = GAN_TO_STEM_ROMAN[gan]
+    zhi_r = ZHI_TO_ROMAN[zhi]
+    return (
+        f"{kind} pillar {hanja_pair} — stem {stem_r} ({stem_en}), "
+        f"branch {zhi_r} ({branch_animal})"
+    )
 
 
 def build_traditional_chart_digest(
@@ -76,53 +49,53 @@ def build_traditional_chart_digest(
         pillars_hanja["hour"] = chart.hour_pillar.value
 
     day_gan, day_zhi = chart.day_pillar.gan, chart.day_pillar.zhi
-    ilgan_oheng = STEM_TO_KOREAN[day_gan]
-    ilju_hangul = _pillar_hangul_pair(day_gan, day_zhi)
-    animal = ZHI_ANIMAL_KO.get(day_zhi, "")
+    day_stem_en = STEM_TO_ENGLISH_LABEL[day_gan]
+    day_pair_en = ganzhi_reading_en(day_gan, day_zhi)
+    animal = ZHI_TO_BRANCH_EN.get(day_zhi, "")
 
     lines: list[str] = []
     mapping = (
-        ("연", chart.year_pillar),
-        ("월", chart.month_pillar),
-        ("일", chart.day_pillar),
+        ("Year", chart.year_pillar),
+        ("Month", chart.month_pillar),
+        ("Day", chart.day_pillar),
     )
     for label, p in mapping:
-        lines.append(_pillar_line_ko(label, p.gan, p.zhi, p.value))
+        lines.append(_pillar_line_en(label, p.gan, p.zhi, p.value))
     if chart.hour_pillar:
         hp = chart.hour_pillar
-        lines.append(_pillar_line_ko("시", hp.gan, hp.zhi, hp.value))
+        lines.append(_pillar_line_en("Hour", hp.gan, hp.zhi, hp.value))
 
     strength_raw = metrics.get("day_master_strength", "")
     idx_raw = metrics.get("strength_index")
-    strength_ko = ""
+    strength_en = ""
     if isinstance(strength_raw, str) and strength_raw:
-        kor_map = {"strong": "신강", "weak": "신약", "balanced": "중화"}
-        strength_ko = kor_map.get(strength_raw, strength_raw)
+        label_map = {"strong": "Strong", "weak": "Weak", "balanced": "Balanced"}
+        strength_en = label_map.get(strength_raw, strength_raw.title())
         if isinstance(idx_raw, int):
-            strength_ko = f"{strength_ko} (지표 {idx_raw:+d}: 토생·설기 대비)"
+            strength_en += f" (index {idx_raw:+d}: support vs drain balance)"
 
     return TraditionalChartDigest(
         pillars_hanja=pillars_hanja,
-        day_stem_oheng_ko=ilgan_oheng,
-        ilju_ganji_hangul=ilju_hangul,
-        ilju_branch_animal_ko=animal,
-        pillar_lines_ko=lines,
-        day_master_strength_ko=strength_ko,
-        signals_ko=gloss_signals_by_section(signals_by_section),
+        day_stem_label_en=day_stem_en,
+        day_pillar_reading_en=day_pair_en,
+        day_branch_animal_label=animal,
+        pillar_lines_en=lines,
+        day_master_strength_en=strength_en,
+        signals_gloss_en=gloss_signals_by_section(signals_by_section),
     )
 
 
 def summarize_digest_for_prompt(digest: TraditionalChartDigest) -> str:
-    """LLM 에 넣기 좋은 압축 텍스트."""
+    """Flatten digest for LLM context (ASCII English copy)."""
     parts = [
-        f"네 기둥(한자): {digest.pillars_hanja}",
-        f"일간(오행): {digest.day_stem_oheng_ko}",
-        f"일주 한글 간지음: {digest.ilju_ganji_hangul}",
-        f"일지 동물 띠: {digest.ilju_branch_animal_ko}",
+        f"Hanja pillars: {digest.pillars_hanja}",
+        f"Day stem (English label): {digest.day_stem_label_en}",
+        f"Romanized day pillar: {digest.day_pillar_reading_en}",
+        f"Day branch animal: {digest.day_branch_animal_label}",
     ]
-    if digest.day_master_strength_ko:
-        parts.append(f"일간 강약 참고: {digest.day_master_strength_ko}")
-    parts.append("기둥별 요약(한글): " + " | ".join(digest.pillar_lines_ko))
-    if digest.signals_ko:
-        parts.append("규칙 엔진 신호(한글): " + json.dumps(digest.signals_ko, ensure_ascii=False))
+    if digest.day_master_strength_en:
+        parts.append(f"Day-master strength note: {digest.day_master_strength_en}")
+    parts.append("Pillar lines: " + " | ".join(digest.pillar_lines_en))
+    if digest.signals_gloss_en:
+        parts.append("Rule-engine signals: " + json.dumps(digest.signals_gloss_en, ensure_ascii=False))
     return "\n".join(parts)

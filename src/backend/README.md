@@ -42,7 +42,16 @@ API 계약과 프로젝트 플랜에 맞춰 **다음은 Pydantic 스키마와 �
 
 **LangGraph:** `app/agent/` 는 이후 **`POST /chat`** 상담 턴용 스캐폴딩. 초기 리딩의 NLG는 LangGraph 바깥 `services/counselor_llm.py` 에서 처리한다.
 
-**LLM / CLōD:** `.env` 에 `CLOD_API_KEY`, `CLOD_BASE_URL`(예: OpenAI 또는 CLōD 게이트 `.../v1`), `CLOD_STRONG_MODEL` 을 두면 초기 리딩이 LLM 생성이 된다. 없으면 자동 폴백.
+**LLM / CLōD:** `src/backend/` 에 두는 `.env` 파일에 다음 세 값을 **모두 채우면** 초기 리딩 카피가 CLōD/OpenAI 호환 `chat/completions` 으로 생성된다. 하나라도 비어 있으면 자동 폴백이다.
+
+| 변수 | 설명 |
+|------|------|
+| `CLOD_API_KEY` | 베어럴 토큰 |
+| `CLOD_BASE_URL` | 게이트 베이스 URL (**끝이 `/v1`** 이어야 한다. 예: `https://your-host/.../v1`) |
+| `CLOD_STRONG_MODEL` | 사용할 채팅 모델 슬러그 |
+
+- 템플릿: [.env.example](.env.example) → 같은 디렉터리에 `.env` 로 복사한 뒤 값 입력.
+- 변경 후에는 Uvicorn을 재시작한다.
 
 ---
 
@@ -94,6 +103,7 @@ tests/                 # pytest — mock JSON 스키마 검증 + `/reading/start
 
 ```bash
 cd src/backend
+cp .env.example .env   # 처음 한 번: 키·URL·모델 채운 뒤 저장 (커밋하지 않음)
 uv sync
 uv run uvicorn app.main:app --reload
 ```

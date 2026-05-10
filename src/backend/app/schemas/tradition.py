@@ -1,4 +1,4 @@
-"""만세력·규칙 시그널을 한국어로 읽기 쉽게 묶은 스냅샷 (API·LLM 공용)."""
+"""Traditional chart digest (English labels) for API and LLM context."""
 
 from __future__ import annotations
 
@@ -6,25 +6,34 @@ from pydantic import BaseModel, Field
 
 
 class TraditionalChartDigest(BaseModel):
-    """사주 풀이에 쓰는 전통 표기 요약 (한글 위주)."""
+    """Structured traditional-chart notes paired with Hanja pillar pairs."""
 
     pillars_hanja: dict[str, str] = Field(
         ...,
-        description="year·month·day·(hour) → 한자 간지 문자열 (예: year=戊寅; 시 미입력 시 hour 키 생략)",
+        description="year, month, day, optional hour → Hanja pillar string (e.g. year=Wu Yin)",
     )
 
-    day_stem_oheng_ko: str = Field(..., description="일간 오행 한글 호칭, 예: 신금")
-    ilju_ganji_hangul: str = Field(..., description="일주 간지 한글 음, 예: 신묘")
-    ilju_branch_animal_ko: str = Field(..., description="일지 띠, 예: 토끼")
-    pillar_lines_ko: list[str] = Field(
+    day_stem_label_en: str = Field(
         ...,
-        description="연·월·일·(시) 기둥 한 줄 요약 (한글)",
+        description="Day stem element label in English (e.g. Sin Metal, Byeong Fire).",
     )
-    day_master_strength_ko: str = Field(
+    day_pillar_reading_en: str = Field(
+        ...,
+        description="Romanized day pillar pair e.g. “Xin Mao”, “Bing Wu”.",
+    )
+    day_branch_animal_label: str = Field(
+        ...,
+        description="Earthly-branch animal in English e.g. Rabbit, Horse.",
+    )
+    pillar_lines_en: list[str] = Field(
+        ...,
+        description="One-line English summary per Year / Month / Day / (Hour) pillar.",
+    )
+    day_master_strength_en: str = Field(
         default="",
-        description="일간 강약 요약 (엔진 메트릭 기반, 한글)",
+        description="Plain-English note on day-master strength when metrics supply it.",
     )
-    signals_ko: dict[str, list[str]] = Field(
+    signals_gloss_en: dict[str, list[str]] = Field(
         default_factory=dict,
-        description="섹션별 규칙 엔진 시그널에 대한 한글 한줄 풀이",
+        description="Rule-engine signals with one-line English gloss per hit.",
     )
