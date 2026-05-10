@@ -15,5 +15,17 @@ dependencies = [
   "langgraph>=0.2.0,<1.0.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
 [tool.setuptools.packages.find]
 include = ["app*"]
+
+# 로컬 개발: src/backend 에서 `uv sync` 후 `uv run uvicorn app.main:app --reload`
+[tool.uv]
+package = true

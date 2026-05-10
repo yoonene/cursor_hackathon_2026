@@ -1104,8 +1104,10 @@ switch (active_reading?.template) {
 
 ## 14.1 Required mock response files
 
+실제 저장 위치: `docs/mocks/`.
+
 ```text
-mocks/
+docs/mocks/
   01_initial_reading_response.json
   02_counseling_start_general_reading.json
   03_compatibility_pending.json
