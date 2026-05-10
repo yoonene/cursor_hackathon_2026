@@ -36,7 +36,60 @@
     },
     "strengths": ["drive", "resilience", "intuitive judgment"],
     "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
-    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "丙午",
+        "ganji_reading_en": "Bing Wu",
+        "stem_hanja": "丙",
+        "branch_hanja": "午",
+        "english_name": "Red Horse",
+        "animal": "horse",
+        "animal_label": "Horse",
+        "color": "red"
+      },
+      "day_master": {
+        "stem_hanja": "丙",
+        "stem_roman": "Bing",
+        "element": "fire",
+        "element_label": "Fire",
+        "polarity": "yang",
+        "english_name": "Yang Fire",
+        "display_label": "丙 · Yang Fire"
+      },
+      "visual_tokens": {
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
+    },
+    "chart_digest": {
+      "pillars_hanja": {
+        "year": "戊寅",
+        "month": "甲子",
+        "day": "丙午",
+        "hour": "壬辰"
+      },
+      "day_stem_label_en": "Byeong Fire",
+      "day_pillar_reading_en": "Bing Wu",
+      "day_branch_animal_label": "Horse",
+      "pillar_lines_en": [
+        "Year pillar 戊寅 — stem Wu (Mu Earth), branch Yin (Tiger)",
+        "Month pillar 甲子 — stem Jia (Gap Wood), branch Zi (Rat)",
+        "Day pillar 丙午 — stem Bing (Byeong Fire), branch Wu (Horse)",
+        "Hour pillar 壬辰 — stem Ren (Im Water), branch Chen (Dragon)"
+      ],
+      "day_master_strength_en": "Strong (index +3: support vs drain balance)",
+      "signals_gloss_en": {
+        "personality": [
+          "Strong drive—you tend to initiate and push forward decisively.",
+          "Goal-setting, learning, and expansion energies come online easily."
+        ],
+        "career": [
+          "Strong suit in running procedures, refinement, and delivery."
+        ]
+      }
+    }
   },
   "counseling_board": {
     "profile_summary": {
@@ -52,7 +105,16 @@
       },
       "dominant_elements": ["fire"],
       "lacking_elements": ["earth", "water"],
-      "keywords": ["direct", "deep-feeling", "change-oriented"]
+      "keywords": ["direct", "deep-feeling", "change-oriented"],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "丙午",
+        "day_pillar_label": "Red Horse",
+        "day_master_label": "Yang Fire",
+        "display_label": "丙午 · Red Horse · Yang Fire",
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
     },
     "active_reading": null,
     "insight_summaries": [],

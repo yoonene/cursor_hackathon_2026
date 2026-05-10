@@ -403,6 +403,7 @@ Used when recommending a favorable time for a specific action.
 ### Full Saju Report tab
 
 - Five-element chart
+- **`chart_identity`** (from API): day pillar Hanja pair, symbolic English pillar name (colour + animal), Yin/Yang + element **day master** labels, theme tokens (`docs/api_contract.md` §6) — avoids client-side Korean parsing for the MVP UI
 - Overall summary
 - Sectioned blocks for personality / relationships / career / emotional pattern
 - Strengths / cautions
@@ -531,11 +532,12 @@ Backend
 ### 4. Report builder
 
 - Converts base saju data into the full static `saju_report`
+- Fills **`chart_identity`** on the report when computing the initial snapshot (English labels for pillar / day master UI)
 
 ### 5. Board builder
 
 - Converts domain results into frontend-ready counseling board templates
-- `profile_summary`
+- `profile_summary` (includes optional **`chart_identity_summary`** aligned with `saju_report.chart_identity`)
 - `active_reading`
 - `insight_summaries`
 - `history`
@@ -623,6 +625,8 @@ AI:
 - AI gives a complete overall interpretation
 - `Full Saju Report` tab opens
   - five-element balance
+  - pillar / day-master identity chips (`saju_report.chart_identity`)
+  - compact board header strip (`counseling_board.profile_summary.chart_identity_summary`)
   - personality
   - relationship style
   - career style

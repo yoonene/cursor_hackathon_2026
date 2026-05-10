@@ -8,10 +8,25 @@
     "id": "saju_report_user_001",
     "title": "Yoonhye's Full Saju Report",
     "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
-    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
-    "dominant_elements": ["fire"],
-    "lacking_elements": ["earth", "water"],
-    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "elements": {
+      "wood": 2,
+      "fire": 4,
+      "earth": 1,
+      "metal": 2,
+      "water": 1
+    },
+    "dominant_elements": [
+      "fire"
+    ],
+    "lacking_elements": [
+      "earth",
+      "water"
+    ],
+    "keywords": [
+      "direct",
+      "deep-feeling",
+      "change-oriented"
+    ],
     "personality": {
       "title": "Personality",
       "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
@@ -28,8 +43,16 @@
       "title": "Emotional Pattern",
       "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
     },
-    "strengths": ["drive", "resilience", "intuitive judgment"],
-    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "strengths": [
+      "drive",
+      "resilience",
+      "intuitive judgment"
+    ],
+    "cautions": [
+      "emotional overheating",
+      "holding things in too long",
+      "late-arriving fatigue after decisions"
+    ],
     "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
   },
   "counseling_board": {
@@ -37,10 +60,25 @@
       "id": "profile_user_001",
       "title": "Yoonhye's Base Flow",
       "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
-      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
-      "dominant_elements": ["fire"],
-      "lacking_elements": ["earth", "water"],
-      "keywords": ["direct", "deep-feeling", "change-oriented"]
+      "elements": {
+        "wood": 2,
+        "fire": 4,
+        "earth": 1,
+        "metal": 2,
+        "water": 1
+      },
+      "dominant_elements": [
+        "fire"
+      ],
+      "lacking_elements": [
+        "earth",
+        "water"
+      ],
+      "keywords": [
+        "direct",
+        "deep-feeling",
+        "change-oriented"
+      ]
     },
     "active_reading": {
       "id": "timing_career_job_change",
@@ -57,9 +95,21 @@
         "reason": "Momentum supports decisive movement once your materials and narrative are tidy."
       },
       "timeline": [
-        { "label": "Now", "keyword": "Prepare", "tone": "muted" },
-        { "label": "Soon", "keyword": "Reach Out", "tone": "highlight" },
-        { "label": "Next", "keyword": "Decide", "tone": "strong" }
+        {
+          "label": "Now",
+          "keyword": "Prepare",
+          "tone": "muted"
+        },
+        {
+          "label": "Soon",
+          "keyword": "Reach Out",
+          "tone": "highlight"
+        },
+        {
+          "label": "Next",
+          "keyword": "Decide",
+          "tone": "strong"
+        }
       ],
       "caution_window": {
         "label": "Use Caution",
@@ -94,5 +144,6 @@
     "to_template": "timing_recommendation",
     "target_id": "timing_career_job_change"
   },
-  "agent_trace": []
+  "agent_trace": [],
+  "partner_intake_requested": false
 }
