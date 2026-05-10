@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     clod_fast_model: str | None = None
     clod_strong_model: str | None = None
     clod_creative_model: str | None = None
+    log_level: str = "INFO"
 
 
 @lru_cache(maxsize=1)
