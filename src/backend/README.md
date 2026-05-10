@@ -105,6 +105,57 @@ uv run uvicorn app.main:app --reload
 
 uv 미설치 시: 공식 안내대로 설치 후 위 명령을 다시 실행하세요.
 
+---
+
+## 직접 요청해서 응답 확인하기
+
+테스트 코드가 아니라 **본인이 터미널·브라우저에서 호출**하려면 아래 순서로 하면 됩니다.
+
+### 1) 서버 켜기
+
+```bash
+cd src/backend
+uv sync
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 2) 브라우저에서 실행 (Swagger)
+
+1. 브라우저에서 **`http://127.0.0.1:8000/docs`** 를 연다.
+2. **`GET /health`** → **Try it out** → **Execute** 하면 바디를 화면에서 볼 수 있다.
+3. **`POST /reading/start`** 도 같은 방식으로, 아래 파일 내용을 **Request body**에 붙여 넣거나 복사해서 보내면 된다.
+   - 요청 예시 파일: 저장소 기준 [`docs/mocks/00_start_reading_request.json`](../../docs/mocks/00_start_reading_request.json)  
+     (`session_id` 는 원하면 매번 다른 문자열로 바꿔도 된다.)
+
+응답 JSON 전체가 화면에 나오므로, mock으로 기대했던 형태(`01_initial_reading_response.json` 등)와 비교해 보면 된다. **실제 수치·문구는** 결정론 엔진과 mock 예시가 다를 수 있다.
+
+### 3) 터미널에서 `curl` (다른 탭에서)
+
+`src/backend` 를 작업 디렉터리로 둔다고 가정한다.
+
+```bash
+# 헬스
+curl -s http://127.0.0.1:8000/health
+```
+
+예쁘게 보려면 로컬에 `jq`가 있으면:
+
+```bash
+curl -s http://127.0.0.1:8000/health | jq .
+```
+
+인테이크(mock 파일 그대로):
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/reading/start \
+  -H "Content-Type: application/json" \
+  --data-binary @../../docs/mocks/00_start_reading_request.json | jq .
+```
+
+응답이 한 줄로만 보이면 `| jq .` 없이 실행해 보면 된다.
+
+---
+
 ## 테스트 (`docs/mocks` 연동)
 
 계약용 예시 JSON은 저장소 루트의 [`docs/mocks/`](../../docs/mocks/)에 있습니다. **`backend` 브랜치에는 `main`을 merge 하면** 이 디렉터리가 같이 들어옵니다(로컬에서는 `git merge origin/main`).
@@ -126,9 +177,7 @@ uv run pytest
   - 통합 테스트만: `uv run pytest -m integration`
   - 통합 제외(빠른 CI 등): `uv run pytest -m "not integration"`
 
-- API 문서: `http://127.0.0.1:8000/docs`
-- 헬스: `GET /health`
-- 인테이크: `POST /reading/start` (본문 예시는 [`docs/api_contract.md`](../../docs/api_contract.md) §3 참고)
+수동으로 API를 두드려 응답을 보는 방법은 이 문서의 **「직접 요청해서 응답 확인하기」** 절을 보면 됩니다.
 
 환경 변수는 선택적으로 `.env`에 둘 수 있습니다 (`Settings` 참고).
 
