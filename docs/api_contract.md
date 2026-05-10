@@ -2,7 +2,8 @@
 
 ## Version
 
-**v4 — Fixed Intake Form → Full Saju Report → Conversational Counseling**
+**v6 — Fixed Intake Form → Full Saju Report → Conversational Counseling**  
+(v6: English-first `chart_identity` on `saju_report`; `chart_identity_summary` on `counseling_board.profile_summary`; `chart_digest` retained for debugging / legacy.)
 
 ---
 
@@ -106,12 +107,12 @@
 │ [ Full Saju Report ] [ Counseling Board ]    │
 ├──────────────────────────────────────────────┤
 │ Full Saju Report tab                         │
-│ - saju_report                                │
+│ - saju_report (chart_identity + chart_digest)│
 │ - full dashboard shown first                 │
 │ - static after creation                      │
 ├──────────────────────────────────────────────┤
 │ Counseling Board tab                         │
-│ - counseling_board.profile_summary          │
+│ - profile_summary (chart_identity_summary)  │
 │ - counseling_board.active_reading           │
 │ - counseling_board.insight_summaries        │
 │ - counseling_board.history                  │
@@ -349,7 +350,59 @@ type InitialReadingResponse = {
     },
     "strengths": ["drive", "resilience", "intuitive judgment"],
     "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
-    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "丙午",
+        "ganji_hangul": "병오",
+        "stem_hanja": "丙",
+        "branch_hanja": "午",
+        "english_name": "Red Horse",
+        "animal": "horse",
+        "animal_label": "Horse",
+        "color": "red"
+      },
+      "day_master": {
+        "stem_hanja": "丙",
+        "stem_hangul": "병",
+        "element": "fire",
+        "element_label": "Fire",
+        "polarity": "yang",
+        "english_name": "Yang Fire",
+        "display_label": "丙 · Yang Fire"
+      },
+      "visual_tokens": {
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
+    },
+    "chart_digest": {
+      "pillars_hanja": {
+        "year": "戊寅",
+        "month": "甲子",
+        "day": "丙午",
+        "hour": "壬辰"
+      },
+      "day_stem_oheng_ko": "병화",
+      "ilju_ganji_hangul": "병오",
+      "ilju_branch_animal_ko": "말",
+      "pillar_lines_ko": [
+        "연주 戊寅 — 천간 무토, 지지 인(호랑이) · 띠 호랑이",
+        "월주 甲子 — 천간 갑목, 지지 자(쥐) · 띠 쥐",
+        "일주 丙午 — 천간 병화, 지지 오(말) · 띠 말",
+        "시주 壬辰 — 천간 임수, 지지 진(용) · 띠 용"
+      ],
+      "day_master_strength_ko": "신강 (지표 +3: 토생·설기 대비)",
+      "signals_ko": {
+        "personality": [
+          "두드러진 추진력·먼저 나서는 패턴이 강합니다."
+        ],
+        "career": [
+          "실행 절차 다듬고 굴리는 데 장점이 큽니다."
+        ]
+      }
+    }
   },
   "counseling_board": {
     "profile_summary": {
@@ -365,7 +418,16 @@ type InitialReadingResponse = {
       },
       "dominant_elements": ["fire"],
       "lacking_elements": ["earth", "water"],
-      "keywords": ["direct", "deep-feeling", "change-oriented"]
+      "keywords": ["direct", "deep-feeling", "change-oriented"],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "丙午",
+        "day_pillar_label": "Red Horse",
+        "day_master_label": "Yang Fire",
+        "display_label": "丙午 · Red Horse · Yang Fire",
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
     },
     "active_reading": null,
     "insight_summaries": [],
@@ -489,7 +551,59 @@ type ChatResponse = {
     },
     "strengths": ["drive", "resilience", "intuitive judgment"],
     "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
-    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "丙午",
+        "ganji_hangul": "병오",
+        "stem_hanja": "丙",
+        "branch_hanja": "午",
+        "english_name": "Red Horse",
+        "animal": "horse",
+        "animal_label": "Horse",
+        "color": "red"
+      },
+      "day_master": {
+        "stem_hanja": "丙",
+        "stem_hangul": "병",
+        "element": "fire",
+        "element_label": "Fire",
+        "polarity": "yang",
+        "english_name": "Yang Fire",
+        "display_label": "丙 · Yang Fire"
+      },
+      "visual_tokens": {
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
+    },
+    "chart_digest": {
+      "pillars_hanja": {
+        "year": "戊寅",
+        "month": "甲子",
+        "day": "丙午",
+        "hour": "壬辰"
+      },
+      "day_stem_oheng_ko": "병화",
+      "ilju_ganji_hangul": "병오",
+      "ilju_branch_animal_ko": "말",
+      "pillar_lines_ko": [
+        "연주 戊寅 — 천간 무토, 지지 인(호랑이) · 띠 호랑이",
+        "월주 甲子 — 천간 갑목, 지지 자(쥐) · 띠 쥐",
+        "일주 丙午 — 천간 병화, 지지 오(말) · 띠 말",
+        "시주 壬辰 — 천간 임수, 지지 진(용) · 띠 용"
+      ],
+      "day_master_strength_ko": "신강 (지표 +3: 토생·설기 대비)",
+      "signals_ko": {
+        "personality": [
+          "두드러진 추진력·먼저 나서는 패턴이 강합니다."
+        ],
+        "career": [
+          "실행 절차 다듬고 굴리는 데 장점이 큽니다."
+        ]
+      }
+    }
   },
   "counseling_board": {
     "profile_summary": {
@@ -505,7 +619,16 @@ type ChatResponse = {
       },
       "dominant_elements": ["fire"],
       "lacking_elements": ["earth", "water"],
-      "keywords": ["direct", "deep-feeling", "change-oriented"]
+      "keywords": ["direct", "deep-feeling", "change-oriented"],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "丙午",
+        "day_pillar_label": "Red Horse",
+        "day_master_label": "Yang Fire",
+        "display_label": "丙午 · Red Horse · Yang Fire",
+        "theme": "fire",
+        "accent": "red",
+        "animal": "horse"
+      }
     },
     "active_reading": {
       "id": "timing_love_confession",
@@ -648,6 +771,51 @@ The full static report dashboard shown immediately after the intake form is subm
 ## 6.2 Type
 
 ```ts
+type ElementKey = "wood" | "fire" | "earth" | "metal" | "water";
+
+type DayPillarIdentity = {
+  ganji_hanja: string;
+  ganji_hangul: string;
+  stem_hanja: string;
+  branch_hanja: string;
+  english_name: string; // symbolic English, e.g. "White Rabbit" (stem phase color + branch animal)
+  animal: string;
+  animal_label: string;
+  color: string;
+};
+
+type DayMasterIdentity = {
+  stem_hanja: string;
+  stem_hangul: string;
+  element: ElementKey;
+  element_label: string;
+  polarity: "yin" | "yang";
+  english_name: string; // e.g. "Yin Metal"
+  display_label: string;
+};
+
+type ChartVisualTokens = {
+  theme: ElementKey;
+  accent: string;
+  animal: string;
+};
+
+type ChartIdentity = {
+  day_pillar: DayPillarIdentity;
+  day_master: DayMasterIdentity;
+  visual_tokens: ChartVisualTokens;
+};
+
+type TraditionalChartDigest = {
+  pillars_hanja: Record<string, string>; // keys: year, month, day, hour? → 한자 간지 (예 "戊寅")
+  day_stem_oheng_ko: string; // 일간 오행 이름, 예 "신금", "병화"
+  ilju_ganji_hangul: string; // 일주 간지 한글 음, 예 "신묘", "병오"
+  ilju_branch_animal_ko: string; // 일지 띠 동물, 예 "토끼", "말"
+  pillar_lines_ko: string[]; // 연·월·일·(시) 기둥 한 줄 요약
+  day_master_strength_ko?: string; // 빈 문자열 허용: 일간 강약 참고 문구 (엔진 메트릭)
+  signals_ko: Partial<Record<string, string[]>>; // 규칙 시그널 코드 → 한글 한 줄 풀이
+};
+
 type SajuReport = {
   id: string;
   title: string;
@@ -669,6 +837,8 @@ type SajuReport = {
   strengths: string[];
   cautions: string[];
   one_line_verdict: string;
+  chart_identity?: ChartIdentity | null; // English-ready labels for visualization (recommended)
+  chart_digest?: TraditionalChartDigest | null; // 없음·null 과 구버전 응답 호환
 };
 
 type ReportSection = {
@@ -695,6 +865,8 @@ The frontend should be able to render:
 10. Strengths
 11. Cautions
 12. One-line verdict
+13. **`chart_identity` (when present)** — day pillar + day master + theme tokens (**English labels**); primary source for visuals
+14. **`chart_digest` (when present)** — 한자·한글 디버깅·레거시용 (optional)
 
 ---
 
@@ -711,6 +883,16 @@ This is **not** a second full report.
 ## 7.2 Type
 
 ```ts
+type ChartIdentitySummary = {
+  day_pillar_hanja: string;
+  day_pillar_label: string;
+  day_master_label: string;
+  display_label: string;
+  theme: ElementKey;
+  accent: string;
+  animal: string;
+};
+
 type ProfileSummary = {
   id: string;
   title: string;
@@ -725,6 +907,7 @@ type ProfileSummary = {
   dominant_elements: string[];
   lacking_elements: string[];
   keywords: string[];
+  chart_identity_summary?: ChartIdentitySummary | null; // absent in older mock payloads
 };
 ```
 
@@ -1128,6 +1311,8 @@ mocks/
 | `05_timing_recommendation_love.json` | Confession timing recommendation |
 | `06_fortune_flow_career_week.json` | Weekly career flow |
 | `07_timing_recommendation_career.json` | Best timing for job change |
+
+`01_initial_reading_response.json` includes **`chart_identity`** (inside `saju_report`) and **`chart_identity_summary`** (inside `counseling_board.profile_summary`) as the canonical English-first visualization payloads (see §6 / §7). Follow-up mocks `02`–`07` may omit these optional fields for brevity; live API responses should carry them alongside `chart_digest`.
 
 ---
 
