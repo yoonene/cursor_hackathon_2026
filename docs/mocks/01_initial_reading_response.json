@@ -40,7 +40,7 @@
     "chart_identity": {
       "day_pillar": {
         "ganji_hanja": "丙午",
-        "ganji_hangul": "병오",
+        "ganji_reading_en": "Bing Wu",
         "stem_hanja": "丙",
         "branch_hanja": "午",
         "english_name": "Red Horse",
@@ -50,7 +50,7 @@
       },
       "day_master": {
         "stem_hanja": "丙",
-        "stem_hangul": "병",
+        "stem_roman": "Bing",
         "element": "fire",
         "element_label": "Fire",
         "polarity": "yang",
@@ -70,22 +70,23 @@
         "day": "丙午",
         "hour": "壬辰"
       },
-      "day_stem_oheng_ko": "병화",
-      "ilju_ganji_hangul": "병오",
-      "ilju_branch_animal_ko": "말",
-      "pillar_lines_ko": [
-        "연주 戊寅 — 천간 무토, 지지 인(호랑이) · 띠 호랑이",
-        "월주 甲子 — 천간 갑목, 지지 자(쥐) · 띠 쥐",
-        "일주 丙午 — 천간 병화, 지지 오(말) · 띠 말",
-        "시주 壬辰 — 천간 임수, 지지 진(용) · 띠 용"
+      "day_stem_label_en": "Byeong Fire",
+      "day_pillar_reading_en": "Bing Wu",
+      "day_branch_animal_label": "Horse",
+      "pillar_lines_en": [
+        "Year pillar 戊寅 — stem Wu (Mu Earth), branch Yin (Tiger)",
+        "Month pillar 甲子 — stem Jia (Gap Wood), branch Zi (Rat)",
+        "Day pillar 丙午 — stem Bing (Byeong Fire), branch Wu (Horse)",
+        "Hour pillar 壬辰 — stem Ren (Im Water), branch Chen (Dragon)"
       ],
-      "day_master_strength_ko": "신강 (지표 +3: 토생·설기 대비)",
-      "signals_ko": {
+      "day_master_strength_en": "Strong (index +3: support vs drain balance)",
+      "signals_gloss_en": {
         "personality": [
-          "두드러진 추진력·먼저 나서는 패턴이 강합니다."
+          "Strong drive—you tend to initiate and push forward decisively.",
+          "Goal-setting, learning, and expansion energies come online easily."
         ],
         "career": [
-          "실행 절차 다듬고 굴리는 데 장점이 큽니다."
+          "Strong suit in running procedures, refinement, and delivery."
         ]
       }
     }

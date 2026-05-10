@@ -8,10 +8,25 @@
     "id": "saju_report_user_001",
     "title": "Yoonhye's Full Saju Report",
     "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
-    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
-    "dominant_elements": ["fire"],
-    "lacking_elements": ["earth", "water"],
-    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "elements": {
+      "wood": 2,
+      "fire": 4,
+      "earth": 1,
+      "metal": 2,
+      "water": 1
+    },
+    "dominant_elements": [
+      "fire"
+    ],
+    "lacking_elements": [
+      "earth",
+      "water"
+    ],
+    "keywords": [
+      "direct",
+      "deep-feeling",
+      "change-oriented"
+    ],
     "personality": {
       "title": "Personality",
       "summary": "When your heart moves, you tend to act before you overthink. At the same time, you often hold onto thoughts longer than others realize."
@@ -28,8 +43,16 @@
       "title": "Emotional Pattern",
       "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
     },
-    "strengths": ["drive", "resilience", "intuitive judgment"],
-    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "strengths": [
+      "drive",
+      "resilience",
+      "intuitive judgment"
+    ],
+    "cautions": [
+      "emotional overheating",
+      "holding things in too long",
+      "late-arriving fatigue after decisions"
+    ],
     "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
   },
   "counseling_board": {
@@ -37,10 +60,25 @@
       "id": "profile_user_001",
       "title": "Yoonhye's Base Flow",
       "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
-      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
-      "dominant_elements": ["fire"],
-      "lacking_elements": ["earth", "water"],
-      "keywords": ["direct", "deep-feeling", "change-oriented"]
+      "elements": {
+        "wood": 2,
+        "fire": 4,
+        "earth": 1,
+        "metal": 2,
+        "water": 1
+      },
+      "dominant_elements": [
+        "fire"
+      ],
+      "lacking_elements": [
+        "earth",
+        "water"
+      ],
+      "keywords": [
+        "direct",
+        "deep-feeling",
+        "change-oriented"
+      ]
     },
     "active_reading": {
       "id": "compatibility_user_minsoo",
@@ -50,15 +88,26 @@
       "score": 82,
       "label": "Warm connection with room to deepen",
       "people": [
-        { "name": "Yoonhye", "dominant_element": "fire" },
-        { "name": "Minsoo", "dominant_element": "water" }
+        {
+          "name": "Yoonhye",
+          "dominant_element": "fire"
+        },
+        {
+          "name": "Minsoo",
+          "dominant_element": "water"
+        }
       ],
-      "connection": { "type": "balanced", "label": "Balanced Flow" },
+      "connection": {
+        "type": "balanced",
+        "label": "Balanced Flow"
+      },
       "strengths": [
         "Warm emotional current that answers quickly.",
         "What feels thin in one chart is steadied by the other."
       ],
-      "friction_points": ["Pacing can feel mismatched during charged moments."],
+      "friction_points": [
+        "Pacing can feel mismatched during charged moments."
+      ],
       "one_line_advice": "Let warmth lead, but speak plainly about tempo before the moment overheats."
     },
     "insight_summaries": [
@@ -88,5 +137,6 @@
     "to_template": "compatibility_result",
     "target_id": "compatibility_user_minsoo"
   },
-  "agent_trace": []
+  "agent_trace": [],
+  "partner_intake_requested": false
 }

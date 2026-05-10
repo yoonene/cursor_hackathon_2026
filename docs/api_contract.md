@@ -2,8 +2,8 @@
 
 ## Version
 
-**v6 — Fixed Intake Form → Full Saju Report → Conversational Counseling**  
-(v6: English-first `chart_identity` on `saju_report`; `chart_identity_summary` on `counseling_board.profile_summary`; `chart_digest` retained for debugging / legacy.)
+**v7 — Compatibility Intake via `partner` Field + SSE Streaming**  
+(v7: `ChatRequest.partner` 필드 추가로 궁합 팝업 결과를 구조화 전송; `ChatResponse.partner_intake_requested` 플래그 추가; `POST /chat/stream` SSE 스트리밍 엔드포인트 추가; `AgentTraceStep.step` enum 확장. v6 변경 내용: English-first `chart_identity` and English `chart_digest` strings on `saju_report`.)
 
 ---
 
@@ -62,7 +62,7 @@
           ▼
 ┌──────────────────────────────────────┐
 │ Backend                              │
-│ FastAPI + LangGraph                  │
+│ FastAPI                              │
 │                                      │
 │ 1. Compute base saju                 │
 │ 2. Generate full initial reading     │
@@ -235,7 +235,8 @@ This prevents the Counseling Board from changing too frequently and feeling nois
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `POST` | `/reading/start` | Submit intake form, create session, generate initial full reading and report |
-| `POST` | `/chat` | Send a follow-up counseling message and receive the latest board state |
+| `POST` | `/chat` | Send a follow-up counseling message and receive the latest board state (JSON) |
+| `POST` | `/chat/stream` | Same as `/chat` but response delivered as Server-Sent Events (SSE) |
 | `POST` | `/session/reset` | Reset a session |
 | `POST` | `/demo/load` | Load seeded demo scenarios |
 | `GET` | `/health` | Health check |
@@ -354,7 +355,7 @@ type InitialReadingResponse = {
     "chart_identity": {
       "day_pillar": {
         "ganji_hanja": "丙午",
-        "ganji_hangul": "병오",
+        "ganji_reading_en": "Bing Wu",
         "stem_hanja": "丙",
         "branch_hanja": "午",
         "english_name": "Red Horse",
@@ -364,7 +365,7 @@ type InitialReadingResponse = {
       },
       "day_master": {
         "stem_hanja": "丙",
-        "stem_hangul": "병",
+        "stem_roman": "Bing",
         "element": "fire",
         "element_label": "Fire",
         "polarity": "yang",
@@ -384,22 +385,23 @@ type InitialReadingResponse = {
         "day": "丙午",
         "hour": "壬辰"
       },
-      "day_stem_oheng_ko": "병화",
-      "ilju_ganji_hangul": "병오",
-      "ilju_branch_animal_ko": "말",
-      "pillar_lines_ko": [
-        "연주 戊寅 — 천간 무토, 지지 인(호랑이) · 띠 호랑이",
-        "월주 甲子 — 천간 갑목, 지지 자(쥐) · 띠 쥐",
-        "일주 丙午 — 천간 병화, 지지 오(말) · 띠 말",
-        "시주 壬辰 — 천간 임수, 지지 진(용) · 띠 용"
+      "day_stem_label_en": "Byeong Fire",
+      "day_pillar_reading_en": "Bing Wu",
+      "day_branch_animal_label": "Horse",
+      "pillar_lines_en": [
+        "Year pillar 戊寅 — stem Wu (Mu Earth), branch Yin (Tiger)",
+        "Month pillar 甲子 — stem Jia (Gap Wood), branch Zi (Rat)",
+        "Day pillar 丙午 — stem Bing (Byeong Fire), branch Wu (Horse)",
+        "Hour pillar 壬辰 — stem Ren (Im Water), branch Chen (Dragon)"
       ],
-      "day_master_strength_ko": "신강 (지표 +3: 토생·설기 대비)",
-      "signals_ko": {
+      "day_master_strength_en": "Strong (index +3: support vs drain balance)",
+      "signals_gloss_en": {
         "personality": [
-          "두드러진 추진력·먼저 나서는 패턴이 강합니다."
+          "Strong drive—you tend to initiate and push forward decisively.",
+          "Goal-setting, learning, and expansion energies come online easily."
         ],
         "career": [
-          "실행 절차 다듬고 굴리는 데 장점이 큽니다."
+          "Strong suit in running procedures, refinement, and delivery."
         ]
       }
     }
@@ -474,6 +476,8 @@ This endpoint:
 
 ## 4.2 Request
 
+일반 메시지:
+
 ```json
 {
   "session_id": "demo-session-001",
@@ -481,14 +485,42 @@ This endpoint:
 }
 ```
 
+궁합 팝업 제출 시 (`message` 없이 `partner`만 전송 가능):
+
+```json
+{
+  "session_id": "demo-session-001",
+  "message": "",
+  "partner": {
+    "display_name": "Minsoo",
+    "birth_date": "1996-08-15",
+    "birth_time": null,
+    "gender": "male"
+  }
+}
+```
+
 ### Request type
 
 ```ts
+type GenderType = "female" | "male" | "other" | "prefer_not_to_say";
+
+type PartnerCompatibilityPayload = {
+  display_name?: string | null;   // 최대 80자; 빈 문자열은 null 처리
+  birth_date: string;             // ISO date: YYYY-MM-DD (필수)
+  birth_time?: string | null;     // HH:MM, optional
+  gender?: GenderType | null;
+};
+
 type ChatRequest = {
-  session_id: string;
-  message: string;
+  session_id: string;             // 1–120자
+  message?: string;               // 최대 4000자; partner 없을 때 필수
+  partner?: PartnerCompatibilityPayload | null;  // 궁합 팝업 제출 결과
 };
 ```
+
+> **규칙**: `message`와 `partner` 중 최소 하나는 반드시 있어야 합니다.  
+> `partner`만 있을 경우 백엔드가 메시지를 `"(상대 사주 정보 폼 제출)"`로 처리합니다.
 
 ---
 
@@ -503,8 +535,9 @@ type ChatResponse = {
   thinking_state: string | null;
   saju_report: SajuReport;
   counseling_board: CounselingBoard;
-  ui_event: UIEvent;
+  ui_event: UIEvent | null;
   agent_trace?: AgentTraceStep[];
+  partner_intake_requested: boolean;  // true이면 프론트가 궁합 정보 입력 팝업을 표시해야 함
 };
 ```
 
@@ -555,7 +588,7 @@ type ChatResponse = {
     "chart_identity": {
       "day_pillar": {
         "ganji_hanja": "丙午",
-        "ganji_hangul": "병오",
+        "ganji_reading_en": "Bing Wu",
         "stem_hanja": "丙",
         "branch_hanja": "午",
         "english_name": "Red Horse",
@@ -565,7 +598,7 @@ type ChatResponse = {
       },
       "day_master": {
         "stem_hanja": "丙",
-        "stem_hangul": "병",
+        "stem_roman": "Bing",
         "element": "fire",
         "element_label": "Fire",
         "polarity": "yang",
@@ -585,22 +618,23 @@ type ChatResponse = {
         "day": "丙午",
         "hour": "壬辰"
       },
-      "day_stem_oheng_ko": "병화",
-      "ilju_ganji_hangul": "병오",
-      "ilju_branch_animal_ko": "말",
-      "pillar_lines_ko": [
-        "연주 戊寅 — 천간 무토, 지지 인(호랑이) · 띠 호랑이",
-        "월주 甲子 — 천간 갑목, 지지 자(쥐) · 띠 쥐",
-        "일주 丙午 — 천간 병화, 지지 오(말) · 띠 말",
-        "시주 壬辰 — 천간 임수, 지지 진(용) · 띠 용"
+      "day_stem_label_en": "Byeong Fire",
+      "day_pillar_reading_en": "Bing Wu",
+      "day_branch_animal_label": "Horse",
+      "pillar_lines_en": [
+        "Year pillar 戊寅 — stem Wu (Mu Earth), branch Yin (Tiger)",
+        "Month pillar 甲子 — stem Jia (Gap Wood), branch Zi (Rat)",
+        "Day pillar 丙午 — stem Bing (Byeong Fire), branch Wu (Horse)",
+        "Hour pillar 壬辰 — stem Ren (Im Water), branch Chen (Dragon)"
       ],
-      "day_master_strength_ko": "신강 (지표 +3: 토생·설기 대비)",
-      "signals_ko": {
+      "day_master_strength_en": "Strong (index +3: support vs drain balance)",
+      "signals_gloss_en": {
         "personality": [
-          "두드러진 추진력·먼저 나서는 패턴이 강합니다."
+          "Strong drive—you tend to initiate and push forward decisively.",
+          "Goal-setting, learning, and expansion energies come online easily."
         ],
         "career": [
-          "실행 절차 다듬고 굴리는 데 장점이 큽니다."
+          "Strong suit in running procedures, refinement, and delivery."
         ]
       }
     }
@@ -723,6 +757,166 @@ type ChatResponse = {
 
 ---
 
+---
+
+## 4.5 궁합 수집 플로우 (Compatibility Intake Flow)
+
+백엔드가 궁합 계산을 위해 상대방 정보가 필요하다고 판단하면 다음과 같이 동작합니다.
+
+### 흐름 요약
+
+```text
+1. 사용자: "민수랑 궁합 봐줘" 등 궁합 관련 메시지 전송
+
+2. 백엔드 → ChatResponse:
+   - current_stage: "collecting_compatibility_info"
+   - counseling_board.active_reading.template: "compatibility_pending"
+   - partner_intake_requested: true   ← 프론트가 팝업을 표시해야 하는 신호
+
+3. 프론트:
+   - partner_intake_requested === true 이면 상대방 생년월일 입력 팝업 표시
+
+4. 사용자: 팝업에서 상대 정보 입력 후 제출
+
+5. 프론트 → POST /chat (또는 /chat/stream):
+   {
+     "session_id": "...",
+     "message": "",       ← 빈 메시지도 허용
+     "partner": {
+       "display_name": "민수",
+       "birth_date": "1996-08-15",
+       "birth_time": null,
+       "gender": "male"
+     }
+   }
+
+6. 백엔드:
+   - 궁합 계산 수행
+   - current_stage: "open_counseling"
+   - counseling_board.active_reading.template: "compatibility_result"
+   - partner_intake_requested: false
+```
+
+### 팝업 표시 규칙
+
+| 조건 | 프론트 동작 |
+|---|---|
+| `partner_intake_requested === true` | 상대방 정보 입력 팝업 열기 |
+| `partner_intake_requested === false` | 팝업 없음, 일반 응답 처리 |
+
+> **중요**: 팝업 결과는 반드시 `ChatRequest.partner` 필드로 전송해야 합니다.  
+> 텍스트 메시지로 생년월일을 입력해도 백엔드가 파싱을 시도하지만, `partner` 구조화 필드 사용이 권장됩니다.
+
+---
+
+---
+
+# 4.6 `POST /chat/stream` (SSE 스트리밍)
+
+## 4.6.1 Purpose
+
+`POST /chat`와 동일한 입력을 받되, 응답을 **Server-Sent Events(SSE)** 스트림으로 분할하여 전송합니다.  
+LLM 답변을 토큰 단위로 점진적으로 표시하는 채팅 UI에 적합합니다.
+
+---
+
+## 4.6.2 Request
+
+`POST /chat`와 동일한 `ChatRequest` JSON 사용.
+
+---
+
+## 4.6.3 Response — SSE 이벤트 흐름
+
+`Content-Type: text/event-stream`으로 응답합니다.
+
+```text
+event: prelude
+data: { ...PreludePayload }
+
+event: delta
+data: { "text": "..." }
+
+event: delta
+data: { "text": "..." }
+
+...
+
+event: complete
+data: { ...ChatResponse }
+```
+
+---
+
+## 4.6.4 이벤트 타입별 Payload
+
+| 이벤트 | 타이밍 | Payload |
+|---|---|---|
+| `prelude` | LLM 스트림 시작 전; 도구 실행 직후 | `PreludePayload` (아래 참조) |
+| `delta` | LLM 토큰마다 1회 | `{ text: string }` |
+| `complete` | 스트림 종료 후 상태 저장 완료 | `ChatResponse` 전체 (JSON) |
+
+### `PreludePayload` 타입
+
+```ts
+type PreludePayload = {
+  session_id: string;
+  current_stage: CurrentStage;
+  recommended_tab: RecommendedTab;     // 항상 "counseling_board"
+  partner_intake_requested: boolean;
+  saju_report: SajuReport;
+  counseling_board: CounselingBoard;
+  ui_event: UIEvent | null;
+  tool_agent_trace: AgentTraceStep[];  // 도구 실행 trace (LLM turn 제외)
+};
+```
+
+> `prelude` 이벤트는 도구 계산 결과(보드 갱신, ui_event)를 LLM 응답 전에 미리 화면에 반영하기 위한 것입니다.  
+> `complete` 이벤트의 `ChatResponse`에는 LLM trace까지 포함된 최종 `agent_trace`가 담깁니다.
+
+---
+
+## 4.6.5 SSE 처리 예시 (TypeScript)
+
+```ts
+const res = await fetch("/chat/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ session_id, message }),
+});
+
+const reader = res.body!.getReader();
+const decoder = new TextDecoder();
+let buffer = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  buffer += decoder.decode(value, { stream: true });
+
+  const lines = buffer.split("\n");
+  buffer = lines.pop()!;
+
+  let eventName = "";
+  for (const line of lines) {
+    if (line.startsWith("event: ")) {
+      eventName = line.slice(7).trim();
+    } else if (line.startsWith("data: ")) {
+      const payload = JSON.parse(line.slice(6));
+      if (eventName === "prelude") {
+        applyPrelude(payload);   // 보드/탭 즉시 반영
+      } else if (eventName === "delta") {
+        appendText(payload.text); // 토큰 스트리밍
+      } else if (eventName === "complete") {
+        finalizeResponse(payload); // 전체 응답 확정
+      }
+    }
+  }
+}
+```
+
+---
+
 # 5. Shared types
 
 ## 5.1 `CurrentStage`
@@ -760,6 +954,26 @@ type CounselingBoard = {
 
 ---
 
+## 5.4 `AgentTraceStep`
+
+개발/디버깅용으로 각 응답에 포함되는 처리 단계 기록입니다.
+
+```ts
+type AgentTraceStep = {
+  step:
+    | "tool_call"      // 사주 계산 / 운세 도구 실행
+    | "view_model"     // UI 뷰 모델 빌드
+    | "graph_node"     // 내부 파이프라인 노드
+    | "routing"        // 인텐트 라우팅 결정
+    | "llm_call";      // LLM 호출 (counselor reply)
+  label: string;
+  tool_name?: string | null;
+  status: "pending" | "completed" | "skipped" | "failed";
+};
+```
+
+---
+
 # 6. `saju_report`
 
 ## 6.1 Purpose
@@ -775,7 +989,7 @@ type ElementKey = "wood" | "fire" | "earth" | "metal" | "water";
 
 type DayPillarIdentity = {
   ganji_hanja: string;
-  ganji_hangul: string;
+  ganji_reading_en: string; // Romanized stem + branch e.g. "Xin Mao", "Bing Wu"
   stem_hanja: string;
   branch_hanja: string;
   english_name: string; // symbolic English, e.g. "White Rabbit" (stem phase color + branch animal)
@@ -786,7 +1000,7 @@ type DayPillarIdentity = {
 
 type DayMasterIdentity = {
   stem_hanja: string;
-  stem_hangul: string;
+  stem_roman: string; // e.g. "Xin", "Bing"
   element: ElementKey;
   element_label: string;
   polarity: "yin" | "yang";
@@ -807,13 +1021,13 @@ type ChartIdentity = {
 };
 
 type TraditionalChartDigest = {
-  pillars_hanja: Record<string, string>; // keys: year, month, day, hour? → 한자 간지 (예 "戊寅")
-  day_stem_oheng_ko: string; // 일간 오행 이름, 예 "신금", "병화"
-  ilju_ganji_hangul: string; // 일주 간지 한글 음, 예 "신묘", "병오"
-  ilju_branch_animal_ko: string; // 일지 띠 동물, 예 "토끼", "말"
-  pillar_lines_ko: string[]; // 연·월·일·(시) 기둥 한 줄 요약
-  day_master_strength_ko?: string; // 빈 문자열 허용: 일간 강약 참고 문구 (엔진 메트릭)
-  signals_ko: Partial<Record<string, string[]>>; // 규칙 시그널 코드 → 한글 한 줄 풀이
+  pillars_hanja: Record<string, string>; // Hanja pillar pairs e.g. year "戊寅"
+  day_stem_label_en: string; // English stem-element label e.g. "Sin Metal"
+  day_pillar_reading_en: string; // Romanized day pillar pair e.g. "Xin Mao"
+  day_branch_animal_label: string; // e.g. "Rabbit"
+  pillar_lines_en: string[]; // Year / Month / Day / Hour one-liners (English prose; may cite Hanja)
+  day_master_strength_en?: string; // Plain English strength note or ""
+  signals_gloss_en: Partial<Record<string, string[]>>; // Rule hits → English one-line gloss
 };
 
 type SajuReport = {
@@ -866,7 +1080,7 @@ The frontend should be able to render:
 11. Cautions
 12. One-line verdict
 13. **`chart_identity` (when present)** — day pillar + day master + theme tokens (**English labels**); primary source for visuals
-14. **`chart_digest` (when present)** — 한자·한글 디버깅·레거시용 (optional)
+14. **`chart_digest` (when present)** — extended English explanations plus Hanja keys (optional)
 
 ---
 
@@ -1314,7 +1528,7 @@ docs/mocks/
 | `06_fortune_flow_career_week.json` | Weekly career flow |
 | `07_timing_recommendation_career.json` | Best timing for job change |
 
-`01_initial_reading_response.json` includes **`chart_identity`** (inside `saju_report`) and **`chart_identity_summary`** (inside `counseling_board.profile_summary`) as the canonical English-first visualization payloads (see §6 / §7). Follow-up mocks `02`–`07` may omit these optional fields for brevity; live API responses should carry them alongside `chart_digest`.
+`01_initial_reading_response.json` includes **`chart_identity`** (inside `saju_report`), **`chart_identity_summary`** (inside `counseling_board.profile_summary`), and an English **`chart_digest`** (`pillar_lines_en`, `signals_gloss_en`, …). Follow-up mocks `02`–`07` may omit these optional fields for brevity; live API responses should populate them consistently.
 
 ---
 
