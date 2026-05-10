@@ -203,6 +203,38 @@ def router_node(state: AgentGraphState) -> dict:
                 "resolved_partner_gender": resolved_gender,
                 "next_node": "saju_agent",
             }
+
+        # 이미 완료된 궁합 분석이 있는 경우 팝업 재출력 방지
+        already_done_compat = any(
+            tc.tool_name == "analyze_compatibility" for tc in cs.completed_tool_calls
+        )
+        if already_done_compat:
+            # 기존 상대방 이름과 다른 새 이름이 명시된 경우에만 팝업 허용
+            partner_name_hint = intent.partner_name if intent else None
+            is_new_person = bool(partner_name_hint) and not any(
+                p.display_name and partner_name_hint.lower() in p.display_name.lower()
+                for p in cs.related_people
+            )
+            if not is_new_person:
+                traces.append(
+                    AgentTraceStep(
+                        step="routing",
+                        label="skip_partner_intake_already_done",
+                        status="completed",
+                    )
+                )
+                return {
+                    "conversation_state": cs,
+                    "intent": intent,
+                    "agent_traces": traces,
+                    "supplemental_context": None,
+                    "ui_event": TabRecommendedEvent(
+                        type="tab_recommended", recommended_tab="counseling_board"
+                    ),
+                    "partner_intake_requested": False,
+                    "next_node": "end",
+                }
+
         return {
             "conversation_state": cs,
             "intent": intent,
