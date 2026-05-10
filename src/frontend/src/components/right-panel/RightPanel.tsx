@@ -103,7 +103,7 @@ function BoardLoadingState() {
           <div className="absolute inset-0 rounded-full border-2 border-sage-200" />
           <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-sage-400 animate-spin" />
         </div>
-        <span className="text-xs text-sage-400">Reading the stars…</span>
+        <span className="text-xs text-sage-400">Reading your fate...</span>
       </div>
     </div>
   )
