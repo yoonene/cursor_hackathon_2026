@@ -1,0 +1,135 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "Now you can ask me anything you want to explore more deeply. What has been on your mind lately?",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": {
+      "wood": 2,
+      "fire": 4,
+      "earth": 1,
+      "metal": 2,
+      "water": 1
+    },
+    "dominant_elements": [
+      "fire"
+    ],
+    "lacking_elements": [
+      "earth",
+      "water"
+    ],
+    "keywords": [
+      "direct",
+      "deep-feeling",
+      "change-oriented"
+    ],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "You may appear open and direct on the surface, while quietly watching the other person's response very carefully underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "You tend to thrive more in environments with movement, growth, and room to shape things than in static settings."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "You can look composed from the outside, yet once something settles in your heart, it may stay with you for quite a while."
+    },
+    "strengths": [
+      "drive",
+      "resilience",
+      "intuitive judgment"
+    ],
+    "cautions": [
+      "emotional overheating",
+      "holding things in too long",
+      "late-arriving fatigue after decisions"
+    ],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "辛卯",
+        "ganji_hangul": "신묘",
+        "stem_hanja": "辛",
+        "branch_hanja": "卯",
+        "english_name": "White Rabbit",
+        "animal": "rabbit",
+        "animal_label": "Rabbit",
+        "color": "white"
+      },
+      "day_master": {
+        "stem_hanja": "辛",
+        "stem_hangul": "신",
+        "element": "metal",
+        "element_label": "Metal",
+        "polarity": "yin",
+        "english_name": "Yin Metal",
+        "display_label": "辛 · Yin Metal"
+      },
+      "visual_tokens": {
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    }
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": {
+        "wood": 2,
+        "fire": 4,
+        "earth": 1,
+        "metal": 2,
+        "water": 1
+      },
+      "dominant_elements": [
+        "fire"
+      ],
+      "lacking_elements": [
+        "earth",
+        "water"
+      ],
+      "keywords": [
+        "direct",
+        "deep-feeling",
+        "change-oriented"
+      ],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "辛卯",
+        "day_pillar_label": "White Rabbit",
+        "day_master_label": "Yin Metal",
+        "display_label": "辛卯 · White Rabbit · Yin Metal",
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    },
+    "active_reading": {
+      "id": "general_001",
+      "semantic_key": "general:opening",
+      "template": "general_reading",
+      "title": "Your Reading Opens",
+      "headline": "The consultation begins",
+      "body": "Your fire energy is alive and ready. Tell me what is weighing on you — love, work, the overall direction — and I will look at it with you.",
+      "prompt_to_user": "What has been on your mind lately?"
+    },
+    "insight_summaries": [],
+    "history": []
+  },
+  "ui_event": {
+    "type": "profile_initialized",
+    "target_id": "profile_user_001"
+  },
+  "partner_intake_requested": false
+}

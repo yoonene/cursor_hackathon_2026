@@ -1,0 +1,179 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "There is a strong pull between the two of you. Fire and wood together can create real momentum, though the pace between you may need care.",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": {
+      "wood": 2,
+      "fire": 4,
+      "earth": 1,
+      "metal": 2,
+      "water": 1
+    },
+    "dominant_elements": [
+      "fire"
+    ],
+    "lacking_elements": [
+      "earth",
+      "water"
+    ],
+    "keywords": [
+      "direct",
+      "deep-feeling",
+      "change-oriented"
+    ],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "Open on the surface, watchful underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "Thrives in movement and growth."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "Composed outside, things linger inside."
+    },
+    "strengths": [
+      "drive",
+      "resilience",
+      "intuitive judgment"
+    ],
+    "cautions": [
+      "emotional overheating",
+      "holding things in too long",
+      "late-arriving fatigue after decisions"
+    ],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "辛卯",
+        "ganji_hangul": "신묘",
+        "stem_hanja": "辛",
+        "branch_hanja": "卯",
+        "english_name": "White Rabbit",
+        "animal": "rabbit",
+        "animal_label": "Rabbit",
+        "color": "white"
+      },
+      "day_master": {
+        "stem_hanja": "辛",
+        "stem_hangul": "신",
+        "element": "metal",
+        "element_label": "Metal",
+        "polarity": "yin",
+        "english_name": "Yin Metal",
+        "display_label": "辛 · Yin Metal"
+      },
+      "visual_tokens": {
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    }
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": {
+        "wood": 2,
+        "fire": 4,
+        "earth": 1,
+        "metal": 2,
+        "water": 1
+      },
+      "dominant_elements": [
+        "fire"
+      ],
+      "lacking_elements": [
+        "earth",
+        "water"
+      ],
+      "keywords": [
+        "direct",
+        "deep-feeling",
+        "change-oriented"
+      ],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "辛卯",
+        "day_pillar_label": "White Rabbit",
+        "day_master_label": "Yin Metal",
+        "display_label": "辛卯 · White Rabbit · Yin Metal",
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    },
+    "active_reading": {
+      "id": "compatibility_user_minsoo",
+      "semantic_key": "compatibility:user:minsoo",
+      "template": "compatibility_result",
+      "title": "Relationship Flow with Minsoo",
+      "score": 82,
+      "label": "Strong Attraction",
+      "people": [
+        {
+          "name": "Yoonhye",
+          "dominant_element": "fire"
+        },
+        {
+          "name": "Minsoo",
+          "dominant_element": "wood"
+        }
+      ],
+      "connection": {
+        "type": "supportive",
+        "label": "Wood feeds Fire — you bring out each other's energy"
+      },
+      "strengths": [
+        "shared momentum",
+        "complementary thinking styles",
+        "mutual respect for independence"
+      ],
+      "friction_points": [
+        "pace mismatch",
+        "Yoonhye may feel Minsoo holds back",
+        "Minsoo may feel overwhelmed by Yoonhye's pace"
+      ],
+      "one_line_advice": "Move forward, but give the rhythm time to settle."
+    },
+    "insight_summaries": [
+      {
+        "id": "insight_compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "label": "Strong pull with Minsoo",
+        "type": "compatibility_result",
+        "short_summary": "82 points · pace needs care"
+      }
+    ],
+    "history": [
+      {
+        "id": "compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "template": "compatibility_result",
+        "title": "Relationship Flow with Minsoo",
+        "summary": "82 points · strong attraction",
+        "created_at": "2026-05-10T18:00:00Z",
+        "updated_at": "2026-05-10T18:00:00Z"
+      }
+    ]
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "compatibility_pending",
+    "to_template": "compatibility_result",
+    "target_id": "compatibility_user_minsoo"
+  },
+  "partner_intake_requested": false
+}

@@ -1,0 +1,92 @@
+initiative_high:
+  section: personality
+  conflict_group: drive
+  sort_order: 10
+growth_oriented:
+  section: personality
+  conflict_group: growth
+  sort_order: 20
+expressive_presence:
+  section: personality
+  conflict_group: expression
+  sort_order: 30
+analytical_focus_high:
+  section: personality
+  conflict_group: cognition
+  sort_order: 40
+emotional_sensitivity_high:
+  section: personality
+  conflict_group: sensitivity
+  sort_order: 50
+stability_high:
+  section: personality
+  conflict_group: stability
+  sort_order: 60
+leadership_fit:
+  section: career
+  conflict_group: career_core
+  sort_order: 10
+creative_fit:
+  section: career
+  conflict_group: career_creative
+  sort_order: 20
+strategy_fit:
+  section: career
+  conflict_group: career_strategy
+  sort_order: 30
+operations_fit:
+  section: career
+  conflict_group: career_operations
+  sort_order: 40
+people_oriented_fit:
+  section: career
+  conflict_group: career_people
+  sort_order: 50
+affection_direct:
+  section: love
+  conflict_group: love_style
+  sort_order: 10
+emotional_depth_high:
+  section: love
+  conflict_group: love_depth
+  sort_order: 20
+relationship_stability_seek:
+  section: love
+  conflict_group: love_stability
+  sort_order: 30
+needs_personal_space:
+  section: love
+  conflict_group: love_space
+  sort_order: 40
+wealth_growth_potential:
+  section: wealth
+  conflict_group: wealth_core
+  sort_order: 10
+wealth_planning_strength:
+  section: wealth
+  conflict_group: wealth_planning
+  sort_order: 20
+wealth_opportunity_sense:
+  section: wealth
+  conflict_group: wealth_opportunity
+  sort_order: 30
+stability_low:
+  section: cautions
+  conflict_group: caution_stability
+  sort_order: 10
+burnout_risk:
+  section: cautions
+  conflict_group: caution_energy
+  sort_order: 20
+overthinking_risk:
+  section: cautions
+  conflict_group: caution_mental
+  sort_order: 30
+decision_scatter_risk:
+  section: cautions
+  conflict_group: caution_focus
+  sort_order: 40
+relationship_guardedness:
+  section: cautions
+  conflict_group: caution_relationship
+  sort_order: 50
