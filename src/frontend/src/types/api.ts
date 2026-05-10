@@ -29,9 +29,17 @@ export type StartReadingRequest = {
   gender?: Gender
 }
 
+export type PartnerCompatibilityPayload = {
+  display_name?: string | null
+  birth_date: string
+  birth_time?: string | null
+  gender?: Gender | null
+}
+
 export type ChatRequest = {
   session_id: string
-  message: string
+  message?: string
+  partner?: PartnerCompatibilityPayload | null
 }
 
 export type SessionResetRequest = {
@@ -261,10 +269,21 @@ export type UIEvent =
 // ─── Agent Trace ──────────────────────────────────────────────────────────────
 
 export type AgentTraceStep = {
-  step: 'tool_call' | 'view_model' | string
+  step: 'tool_call' | 'view_model' | 'graph_node' | 'routing' | 'llm_call' | string
   label: string
-  tool_name?: string
-  status: 'completed' | 'in_progress' | 'failed'
+  tool_name?: string | null
+  status: 'pending' | 'completed' | 'skipped' | 'failed'
+}
+
+export type PreludePayload = {
+  session_id: string
+  current_stage: CurrentStage
+  recommended_tab: RecommendedTab
+  partner_intake_requested: boolean
+  saju_report: SajuReport
+  counseling_board: CounselingBoard
+  ui_event: UIEvent | null
+  tool_agent_trace: AgentTraceStep[]
 }
 
 // ─── API Responses ────────────────────────────────────────────────────────────
@@ -291,4 +310,5 @@ export type ChatResponse = {
   counseling_board: CounselingBoard
   ui_event: UIEvent
   agent_trace?: AgentTraceStep[]
+  partner_intake_requested: boolean
 }

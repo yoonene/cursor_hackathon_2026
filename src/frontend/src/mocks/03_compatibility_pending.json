@@ -139,5 +139,6 @@
     "from_template": "general_reading",
     "to_template": "compatibility_pending",
     "target_id": "compatibility_pending_001"
-  }
+  },
+  "partner_intake_requested": true
 }

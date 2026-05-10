@@ -201,5 +201,6 @@
     "from_template": "timing_recommendation",
     "to_template": "fortune_flow",
     "target_id": "fortune_career_week"
-  }
+  },
+  "partner_intake_requested": false
 }

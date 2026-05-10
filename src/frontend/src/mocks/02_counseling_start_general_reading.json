@@ -130,5 +130,6 @@
   "ui_event": {
     "type": "profile_initialized",
     "target_id": "profile_user_001"
-  }
+  },
+  "partner_intake_requested": false
 }

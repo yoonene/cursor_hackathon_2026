@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
 import ChatMessage, { TypingIndicator } from './ChatMessage'
 import ChatInput from './ChatInput'
+import PartnerIntakeModal from './PartnerIntakeModal'
 
 export default function ChatArea() {
   const messages = useSessionStore((s) => s.messages)
   const isLoading = useSessionStore((s) => s.isLoading)
   const reset = useSessionStore((s) => s.reset)
   const phase = useSessionStore((s) => s.phase)
+  const partnerIntakeRequested = useSessionStore((s) => s.partnerIntakeRequested)
 
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -56,6 +58,9 @@ export default function ChatArea() {
 
       {/* Input */}
       <ChatInput />
+
+      {/* Partner intake popup */}
+      {partnerIntakeRequested && <PartnerIntakeModal />}
     </div>
   )
 }

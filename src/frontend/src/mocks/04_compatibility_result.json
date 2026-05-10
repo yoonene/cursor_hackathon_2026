@@ -174,5 +174,6 @@
     "from_template": "compatibility_pending",
     "to_template": "compatibility_result",
     "target_id": "compatibility_user_minsoo"
-  }
+  },
+  "partner_intake_requested": false
 }

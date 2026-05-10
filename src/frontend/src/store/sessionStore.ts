@@ -5,6 +5,7 @@ import type {
   RecommendedTab,
   CurrentStage,
   StartReadingRequest,
+  PartnerCompatibilityPayload,
 } from '@/types/api'
 import { startReading } from '@/api/reading'
 import { sendChat, resetSession } from '@/api/chat'
@@ -28,12 +29,15 @@ type SessionState = {
   activeTab: RecommendedTab
   isLoading: boolean
   error: string | null
+  partnerIntakeRequested: boolean
 }
 
 type SessionActions = {
   submitIntake: (request: Omit<StartReadingRequest, 'session_id'>) => Promise<void>
   submitMessage: (text: string) => Promise<void>
+  submitPartner: (partner: PartnerCompatibilityPayload) => Promise<void>
   setActiveTab: (tab: RecommendedTab) => void
+  closePartnerIntake: () => void
   reset: () => Promise<void>
 }
 
@@ -49,12 +53,15 @@ const initialState: SessionState = {
   activeTab: 'saju_report',
   isLoading: false,
   error: null,
+  partnerIntakeRequested: false,
 }
 
 export const useSessionStore = create<SessionState & SessionActions>((set, get) => ({
   ...initialState,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  closePartnerIntake: () => set({ partnerIntakeRequested: false }),
 
   submitIntake: async (request) => {
     set({ isLoading: true, error: null })
@@ -88,6 +95,7 @@ export const useSessionStore = create<SessionState & SessionActions>((set, get) 
     set((state) => ({
       isLoading: true,
       error: null,
+      partnerIntakeRequested: false,
       messages: [...state.messages, userMsg],
     }))
     try {
@@ -99,6 +107,35 @@ export const useSessionStore = create<SessionState & SessionActions>((set, get) 
         counselingBoard: res.counseling_board,
         phase: 'counseling',
         isLoading: false,
+        partnerIntakeRequested: res.partner_intake_requested ?? false,
+        messages: [
+          ...state.messages,
+          {
+            id: makeId(),
+            role: 'assistant',
+            content: res.assistant_message,
+            timestamp: Date.now(),
+          },
+        ],
+      }))
+    } catch (e) {
+      set({ isLoading: false, error: 'Something went wrong. Please try again.' })
+      console.error(e)
+    }
+  },
+
+  submitPartner: async (partner) => {
+    set({ isLoading: true, error: null, partnerIntakeRequested: false })
+    try {
+      const res = await sendChat({ session_id: get().sessionId, message: '', partner })
+      set((state) => ({
+        currentStage: res.current_stage,
+        activeTab: res.recommended_tab,
+        sajuReport: res.saju_report,
+        counselingBoard: res.counseling_board,
+        phase: 'counseling',
+        isLoading: false,
+        partnerIntakeRequested: res.partner_intake_requested ?? false,
         messages: [
           ...state.messages,
           {

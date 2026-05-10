@@ -226,5 +226,6 @@
     "from_template": "fortune_flow",
     "to_template": "timing_recommendation",
     "target_id": "timing_career_job_change"
-  }
+  },
+  "partner_intake_requested": false
 }

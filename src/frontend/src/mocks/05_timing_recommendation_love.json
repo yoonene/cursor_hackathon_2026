@@ -194,5 +194,6 @@
     "from_template": "compatibility_result",
     "to_template": "timing_recommendation",
     "target_id": "timing_love_confession"
-  }
+  },
+  "partner_intake_requested": false
 }
