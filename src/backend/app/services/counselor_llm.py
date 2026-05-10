@@ -347,7 +347,7 @@ def generate_initial_counseling_copy(
             },
         ],
         "temperature": 0.65,
-        "max_tokens": 1400,
+        "max_tokens": 2400,
     }
 
     headers = {
@@ -355,7 +355,7 @@ def generate_initial_counseling_copy(
         "Content-Type": "application/json",
     }
 
-    logger.debug("initial reading LLM call — url=%s model=%s max_tokens=1800", url, settings.clod_strong_model)
+    logger.debug("initial reading LLM call — url=%s model=%s max_tokens=2400", url, settings.clod_strong_model)
     t0 = time.perf_counter()
     try:
         response = httpx.post(url, json=body, headers=headers, timeout=120.0)
@@ -418,7 +418,7 @@ async def stream_initial_counseling_copy(
             },
         ],
         "temperature": 0.65,
-        "max_tokens": 1400,
+        "max_tokens": 2400,
         "stream": True,
     }
     headers = {
