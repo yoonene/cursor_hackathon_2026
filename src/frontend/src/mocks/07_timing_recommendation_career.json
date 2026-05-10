@@ -1,0 +1,231 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "In this cycle, it is better not to drag the preparation too long. The flow around May 18 is stronger for making a move.",
+  "current_stage": "open_counseling",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": {
+      "wood": 2,
+      "fire": 4,
+      "earth": 1,
+      "metal": 2,
+      "water": 1
+    },
+    "dominant_elements": [
+      "fire"
+    ],
+    "lacking_elements": [
+      "earth",
+      "water"
+    ],
+    "keywords": [
+      "direct",
+      "deep-feeling",
+      "change-oriented"
+    ],
+    "personality": {
+      "title": "Personality",
+      "summary": "When your heart moves, you tend to act before you overthink."
+    },
+    "relationship_style": {
+      "title": "Relationship Style",
+      "summary": "Open on the surface, watchful underneath."
+    },
+    "career_style": {
+      "title": "Career Style",
+      "summary": "Thrives in movement and growth."
+    },
+    "emotional_pattern": {
+      "title": "Emotional Pattern",
+      "summary": "Composed outside, things linger inside."
+    },
+    "strengths": [
+      "drive",
+      "resilience",
+      "intuitive judgment"
+    ],
+    "cautions": [
+      "emotional overheating",
+      "holding things in too long",
+      "late-arriving fatigue after decisions"
+    ],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire.",
+    "chart_identity": {
+      "day_pillar": {
+        "ganji_hanja": "辛卯",
+        "ganji_hangul": "신묘",
+        "stem_hanja": "辛",
+        "branch_hanja": "卯",
+        "english_name": "White Rabbit",
+        "animal": "rabbit",
+        "animal_label": "Rabbit",
+        "color": "white"
+      },
+      "day_master": {
+        "stem_hanja": "辛",
+        "stem_hangul": "신",
+        "element": "metal",
+        "element_label": "Metal",
+        "polarity": "yin",
+        "english_name": "Yin Metal",
+        "display_label": "辛 · Yin Metal"
+      },
+      "visual_tokens": {
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    }
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": {
+        "wood": 2,
+        "fire": 4,
+        "earth": 1,
+        "metal": 2,
+        "water": 1
+      },
+      "dominant_elements": [
+        "fire"
+      ],
+      "lacking_elements": [
+        "earth",
+        "water"
+      ],
+      "keywords": [
+        "direct",
+        "deep-feeling",
+        "change-oriented"
+      ],
+      "chart_identity_summary": {
+        "day_pillar_hanja": "辛卯",
+        "day_pillar_label": "White Rabbit",
+        "day_master_label": "Yin Metal",
+        "display_label": "辛卯 · White Rabbit · Yin Metal",
+        "theme": "metal",
+        "accent": "white",
+        "animal": "rabbit"
+      }
+    },
+    "active_reading": {
+      "id": "timing_career_job_change",
+      "semantic_key": "timing:career:job_change",
+      "template": "timing_recommendation",
+      "title": "Best Time to Make a Job Move",
+      "domain": "career",
+      "action_type": "job_change",
+      "headline_keyword": "Clear Window",
+      "one_line_summary": "The flow around May 18 supports decisive action in your career.",
+      "recommended_window": {
+        "label": "Strongest Window",
+        "date_range": "Around May 18",
+        "reason": "Your momentum is at a peak, and external circumstances are more receptive to bold steps."
+      },
+      "timeline": [
+        {
+          "label": "May 12–14",
+          "keyword": "Prepare",
+          "tone": "soft"
+        },
+        {
+          "label": "May 15–17",
+          "keyword": "Align",
+          "tone": "highlight"
+        },
+        {
+          "label": "May 18",
+          "keyword": "Move",
+          "tone": "strong"
+        }
+      ],
+      "caution_window": {
+        "label": "Use Caution",
+        "date_range": "May 20–22",
+        "reason": "Energy may dip after the peak — avoid making large commitments in this window."
+      }
+    },
+    "insight_summaries": [
+      {
+        "id": "insight_compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "label": "Strong pull with Minsoo",
+        "type": "compatibility_result",
+        "short_summary": "82 points · pace needs care"
+      },
+      {
+        "id": "insight_timing_love_confession",
+        "semantic_key": "timing:love:confession",
+        "label": "Strong confession window",
+        "type": "timing_recommendation",
+        "short_summary": "Around May 14"
+      },
+      {
+        "id": "insight_fortune_career_week",
+        "semantic_key": "fortune_flow:career:this_week",
+        "label": "This week's career flow",
+        "type": "fortune_flow",
+        "short_summary": "Expansion · look outward"
+      },
+      {
+        "id": "insight_timing_career_job_change",
+        "semantic_key": "timing:career:job_change",
+        "label": "Best time for job move",
+        "type": "timing_recommendation",
+        "short_summary": "Around May 18"
+      }
+    ],
+    "history": [
+      {
+        "id": "compatibility_user_minsoo",
+        "semantic_key": "compatibility:user:minsoo",
+        "template": "compatibility_result",
+        "title": "Relationship Flow with Minsoo",
+        "summary": "82 points · strong attraction",
+        "created_at": "2026-05-10T18:00:00Z",
+        "updated_at": "2026-05-10T18:00:00Z"
+      },
+      {
+        "id": "timing_love_confession",
+        "semantic_key": "timing:love:confession",
+        "template": "timing_recommendation",
+        "title": "Best Time to Confess",
+        "summary": "The flow is softest around May 14",
+        "created_at": "2026-05-10T18:05:00Z",
+        "updated_at": "2026-05-10T18:05:00Z"
+      },
+      {
+        "id": "fortune_career_week",
+        "semantic_key": "fortune_flow:career:this_week",
+        "template": "fortune_flow",
+        "title": "This Week's Career Flow",
+        "summary": "Expansion · compare opportunities",
+        "created_at": "2026-05-10T18:10:00Z",
+        "updated_at": "2026-05-10T18:10:00Z"
+      },
+      {
+        "id": "timing_career_job_change",
+        "semantic_key": "timing:career:job_change",
+        "template": "timing_recommendation",
+        "title": "Best Time to Make a Job Move",
+        "summary": "Around May 18",
+        "created_at": "2026-05-10T18:15:00Z",
+        "updated_at": "2026-05-10T18:15:00Z"
+      }
+    ]
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "fortune_flow",
+    "to_template": "timing_recommendation",
+    "target_id": "timing_career_job_change"
+  },
+  "partner_intake_requested": false
+}
