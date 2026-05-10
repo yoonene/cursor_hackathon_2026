@@ -514,13 +514,42 @@ Backend
 - Base facts are generated deterministically
 - Same input should always return the same result
 
-### 2. LangGraph consultation flow
+### 2. LangGraph multi-agent graph
 
-- Intake-complete state
-- Initial report state
-- Current counseling context
-- Tool routing
-- Missing-information collection
+백엔드 후속 상담은 `langgraph.StateGraph` 기반 멀티-에이전트 그래프로 구현됩니다.
+
+```text
+POST /chat
+  └─ LangGraph StateGraph
+       │
+       ├─ router_node          라우터 에이전트
+       │   - 상태 정합성 복구
+       │   - 의도 분류 (LLM + keyword fallback)
+       │   - 다음 에이전트 결정
+       │
+       ├─ saju_agent_node      사주 에이전트
+       │   - 상대방 PersonProfile 생성
+       │   - analyze_base_saju(상대방) 실행
+       │   - 결과를 compat_agent에 전달
+       │
+       ├─ compat_agent_node    궁합 에이전트
+       │   - saju_agent 결과(상대 사주) 수신
+       │   - analyze_compatibility(내 사주, 상대 사주)
+       │   - 보드 업데이트
+       │
+       ├─ fortune_agent_node   운세 에이전트
+       │   - analyze_domain_fortune()
+       │
+       ├─ timing_agent_node    타이밍 에이전트
+       │   - analyze_favorable_timing()
+       │
+       └─ collect_partner_node 수집 대기 노드
+           - compatibility_pending 상태 설정
+           - partner_intake_requested 신호 발송
+```
+
+에이전트 간 위임 흐름 (궁합):
+`router` → `saju_agent`(상대 원국 계산) → `compat_agent`(궁합 계산)
 
 ### 3. Domain tools
 

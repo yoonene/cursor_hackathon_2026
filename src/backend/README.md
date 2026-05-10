@@ -42,7 +42,7 @@ API 계약과 프로젝트 플랜에 맞춰 **다음은 Pydantic 스키마와 �
 - `saju.domain_fortune.analyze_domain_fortune` — 연애/직업/금전 등 도메인별 흐름
 - `saju.favorable_timing.analyze_favorable_timing` — 행동 유형별 유리한 시기
 
-**LangGraph:** `app/agent/` 는 이후 라우팅·도구 연동 확장용 스캐폴딩입니다. 초기 리딩·후속 턴 NLG는 현재 LangGraph 바깥 `services/counselor_llm.py` + `services/chat_service.py` 에서 처리합니다.
+**LangGraph:** 후속 상담은 `app/agents/` 의 `StateGraph` 기반 **멀티-에이전트 그래프**로 처리됩니다. `router_node`가 의도를 분류한 뒤 `saju_agent_node`(상대 원국 계산) → `compat_agent_node`(궁합 분석) 등으로 위임합니다. NLG는 그래프 실행 후 `services/counselor_llm.py`에서 별도로 처리합니다.
 
 **LLM / CLōD:** `src/backend/` 에 두는 `.env` 파일에 다음 세 값을 **모두 채우면** 초기 리딩 카피가 CLōD/OpenAI 호환 `chat/completions` 으로 생성된다. 하나라도 비어 있으면 자동 폴백이다.
 
@@ -64,7 +64,7 @@ API 계약과 프로젝트 플랜에 맞춰 **다음은 Pydantic 스키마와 �
 | 런타임 | Python ≥ 3.11 |
 | 웹 | FastAPI, Uvicorn |
 | 검증·모델 | Pydantic v2, pydantic-settings |
-| 에이전트(스캐폴딩) | LangGraph |
+| 에이전트 그래프 | LangGraph (`app/agents/`) |
 | 만세력 | lunar-python (`saju.saju_calculator`) |
 | 규칙 해석 | PyYAML 규칙 (`app/saju/rules/*.yaml`, `rule_engine`) |
 | LLM 게이트 | httpx → OpenAI 형식 `/v1/chat/completions` (`counselor_llm`) |
@@ -86,7 +86,10 @@ app/
   saju/                # lunar 계산 YAML 규칙 · compute 파이프
   builders/            # SajuReport(팩트+LLM)·CounselingBoard 초기 상태
   services/            # reading, counselor_llm, session_store
-  agent/               # LangGraph 상태·라우팅·노드(플레이스홀더)
+  agents/              # LangGraph 멀티-에이전트 그래프
+    graph_state.py     # AgentGraphState TypedDict
+    nodes.py           # router / saju_agent / compat_agent / fortune_agent / timing_agent 노드
+    graph.py           # StateGraph 빌드 + run_counselor_graph()
 tests/                 # pytest — mock JSON 스키마 검증 + `/reading/start` API
 ```
 

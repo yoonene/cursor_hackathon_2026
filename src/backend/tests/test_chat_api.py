@@ -245,6 +245,32 @@ def test_compat_pending_response_includes_partner_intake_flag(client):
     assert r.json()["partner_intake_requested"] is True
 
 
+def test_compat_agent_traces_contain_saju_and_compat_tool_names(client):
+    """LangGraph: saju_agent_node → compat_agent_node 순서로 실행되는지 트레이스로 확인."""
+    sid = str(uuid.uuid4())
+    client.post("/reading/start", json={"session_id": sid, "birth_date": "1998-04-21", "gender": "female"})
+    r = client.post(
+        "/chat",
+        json={"session_id": sid, "message": "궁합 봐줘 상대방 1992-05-20"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["counseling_board"]["active_reading"]["template"] == "compatibility_result"
+    tool_names = [t["tool_name"] for t in (body.get("agent_trace") or []) if t.get("tool_name")]
+    assert any("saju_agent" in n for n in tool_names), f"saju_agent not in traces: {tool_names}"
+    assert any("compat_agent" in n for n in tool_names), f"compat_agent not in traces: {tool_names}"
+
+
+def test_fortune_agent_trace_tool_name(client):
+    """LangGraph: fortune_agent_node 트레이스 확인."""
+    sid = str(uuid.uuid4())
+    client.post("/reading/start", json={"session_id": sid, "birth_date": "1990-03-10"})
+    r = client.post("/chat", json={"session_id": sid, "message": "직업운 어때"})
+    assert r.status_code == 200
+    tool_names = [t["tool_name"] for t in (r.json().get("agent_trace") or []) if t.get("tool_name")]
+    assert any("fortune_agent" in n for n in tool_names), f"fortune_agent not in traces: {tool_names}"
+
+
 def test_partner_payload_primes_even_if_pending_was_cleared(client):
     sid = str(uuid.uuid4())
     start = client.post("/reading/start", json={"session_id": sid, "birth_date": "1998-04-21", "gender": "female"})
