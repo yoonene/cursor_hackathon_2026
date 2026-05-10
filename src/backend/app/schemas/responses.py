@@ -31,6 +31,7 @@ class ChatResponse(BaseModel):
     counseling_board: CounselingBoard
     ui_event: UIEvent | None
     agent_trace: list[AgentTraceStep] | None = None
+    partner_intake_requested: bool = False
 
 
 class ResetSessionResponse(BaseModel):

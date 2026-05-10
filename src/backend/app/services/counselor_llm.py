@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -13,6 +14,7 @@ from app.core.config import Settings
 from app.schemas.counselor_llm import InitialReadingLLMOutput
 from app.schemas.profiles import PersonProfile
 from app.schemas.saju import SajuData
+from app.schemas.state import ConversationState
 from app.saju.trad_chart_digest import summarize_digest_for_prompt
 
 
@@ -218,3 +220,255 @@ def generate_initial_counseling_copy(
             _fallback_copy(profile, saju_data, signals_by_section),
             "fallback_llm_failed",
         )
+
+
+_FOLLOWUP_SYSTEM = """You are a warm, articulate Four Pillars (saju) counselor continuing an ongoing chat in polished English only.
+
+Hard rules:
+- Never contradict deterministic chart facts supplied in CHART FACTS SNAPSHOT below (pillars, element counts, chart_identity).
+- Interpretation signals are factual rule-engine hits—not suggestions to ignore silently.
+- If the user asks something not answered by supplied data, say so plainly and invite them to clarify.
+- Prefer concise, practical replies (typically 2–6 short paragraphs) unless they ask for depth.
+
+Output plain assistant prose only — no markdown code fences or JSON blobs."""
+
+
+def _partner_intake_addon(supplemental_context: str | None) -> str:
+    """When JSON tool payloads ask for counterpart birth data — short polite Korean replies."""
+    if not supplemental_context:
+        return ""
+    try:
+        blob = json.loads(supplemental_context)
+    except json.JSONDecodeError:
+        return ""
+    tool = blob.get("tool")
+
+    overrides = (
+        "\nLANGUAGE OVERRIDE FOR THIS MESSAGE ONLY:\n"
+        "- Write in polite Korean regardless of instructions above mentioning English.\n"
+        "- No markdown. At most four short sentences (no headings, no bullets).\n"
+        "- Do NOT give long chart-deep interpretation limited to only the querent.\n\n"
+        "TASK:\n"
+    )
+
+    if tool == "compatibility_pending":
+        reopen = blob.get("re_prompt_ui")
+        reopen_line = (
+            "- 사용자가 입력 팝업/폼 다시 표시를 요청한 경우에는, 그 의도를 짧게 수긍합니다.\n"
+            if reopen
+            else ""
+        )
+        return overrides + reopen_line + (
+            "- The user asks about fit/compatibility.\n"
+            "- Say plainly that 두 사람 원국을 비교하려면 상대의 생년월일이 필요하다.\n"
+            "- 이름·별명은 선택이라고 안내하고, 생년월일 입력을 부드럽게 요청한다.\n"
+            "- 형식 안내 한 문장: YYYY-MM-DD 또는 yyyy년 m월 d일.\n"
+        )
+
+    if tool == "compatibility_collect" and not blob.get("parsed_birth_date"):
+        return overrides + "- Birth date 아직 확인되지 않았어요. 같은 형식으로 다시 적어달라 간단히 안내합니다.\n"
+
+    if tool == "analyze_compatibility":
+        return (
+            "\nLANGUAGE OVERRIDE FOR THIS MESSAGE ONLY:\n"
+            "- Write in polite Korean.\n"
+            "- Stay strictly grounded in the compatibility JSON (+ counterpart_element_emphasis / "
+            "counterpart_profile_for_llm entries if present).\n"
+            "- Do NOT ask for birthplace, country, timezone, or city correction — unsupported in this pipeline.\n"
+            "- counterpart birth time is OPTIONAL: if `birth_time_known`/`hour_pillar_known` indicates unknown, "
+            "do NOT insist on 시간·장소 입력; 간단히 '시까지 알면 더 정밀하지만 현재 결과는 생년월일 기준 원국입니다' 같은 한 문장으로만 언급하거나 생략해도 된다.\n"
+            "- Do NOT invent zodiac-year-only animal stories beyond the deterministic JSON snapshots.\n"
+            "- Keep it modest (typically 3–7 short sentences), practical, compassionate.\n\n"
+            "TASK: Summarize the deterministic compatibility snapshot for the user conversationally.\n"
+        )
+
+    return ""
+
+
+def _chat_url(settings: Settings) -> str:
+    base = settings.clod_base_url or ""
+    base = base.rstrip("/")
+    return f"{base}/chat/completions" if base.endswith("/v1") else f"{base}/v1/chat/completions"
+
+
+def _chart_facts_compact(state: ConversationState) -> str:
+    ud = state.user_saju
+    rp = state.saju_report
+    parts: list[str] = [
+        json.dumps(ud.elements.as_dict(), ensure_ascii=False),
+        f"dominant: {ud.dominant_elements}; lacking: {ud.lacking_elements}",
+        f"interpretation_signals: {json.dumps(ud.interpretation_signals, ensure_ascii=False)}",
+    ]
+    if rp.chart_identity is not None:
+        parts.append("chart_identity: " + rp.chart_identity.model_dump_json(exclude_none=True))
+    parts.append(rp.one_line_verdict)
+    parts.append(rp.overall_summary[:2400])
+    return "\n".join(parts)
+
+
+def _fallback_followup(state: ConversationState) -> tuple[str, str]:
+    dn = state.user_profile.display_name or "You"
+    dom = ", ".join(state.user_saju.dominant_elements)
+    return (
+        f"{dn}, I’m running without an active language-model connection from the server config. "
+        f"Using your snapshot, {dom.capitalize()} energies still headline the dialogue. "
+        "Tell me what you’d like to unpack—timing, partnerships, career emphasis, emotional patterns—and we can build on that.",
+        "fallback_no_credentials",
+    )
+
+
+def _followup_fallback_text(state: ConversationState, supplemental_context: str | None) -> tuple[str, str]:
+    fb, tag = _fallback_followup(state)
+    if supplemental_context:
+        return (
+            fb
+            + "\n\n"
+            + "Engine note (prepared for you; integrate if relevant):\n"
+            + supplemental_context[:1800],
+            tag,
+        )
+    return fb, tag
+
+
+def _build_follow_up_chat_messages(state: ConversationState, supplemental_context: str | None) -> list[dict[str, str]]:
+    snapshot = "CHART FACTS SNAPSHOT (authoritative):\n" + _chart_facts_compact(state)
+    if supplemental_context:
+        snapshot += (
+            "\n\nTOOL / READING OUTPUT (ground your reply in these facts; do not contradict scores):\n"
+            + supplemental_context[:8000]
+        )
+    turns: list[dict[str, str]] = []
+    for m in state.messages:
+        if m.role not in ("user", "assistant"):
+            continue
+        turns.append({"role": m.role, "content": m.content})
+    tail = turns[-24:] if len(turns) > 24 else turns
+
+    system_block = _FOLLOWUP_SYSTEM + "\n\n" + snapshot + _partner_intake_addon(supplemental_context)
+    messages: list[dict[str, str]] = [{"role": "system", "content": system_block}]
+    messages.extend(tail)
+    return messages
+
+
+def generate_followup_counseling_reply(
+    settings: Settings,
+    state: ConversationState,
+    *,
+    supplemental_context: str | None = None,
+) -> tuple[str, str]:
+    """Follow-up conversational turn via CLōD / OpenAI-style chat completions (plain text)."""
+
+    if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        return _followup_fallback_text(state, supplemental_context)
+
+    url = _chat_url(settings)
+    messages = _build_follow_up_chat_messages(state, supplemental_context)
+
+    body = {
+        "model": settings.clod_strong_model,
+        "messages": messages,
+        "temperature": 0.55,
+        "max_tokens": 1200,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.clod_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = httpx.post(url, json=body, headers=headers, timeout=120.0)
+        response.raise_for_status()
+        data = response.json()
+        text = data["choices"][0]["message"]["content"].strip()
+        if not text:
+            raise ValueError("empty assistant content")
+        return text, "llm_ok"
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+        fb, lab = _fallback_followup(state)
+        if supplemental_context:
+            return (
+                fb
+                + "\n\n"
+                + "Engine note (deterministic):\n"
+                + supplemental_context[:1800],
+                "fallback_llm_failed",
+            )
+        return fb, lab
+
+
+def _sse_openai_collect_delta(line_suffix: str) -> str | None:
+    """Return text fragment from one `data: {...}` SSE line body, if any."""
+    if line_suffix.strip() == "[DONE]":
+        return None
+    try:
+        blob = json.loads(line_suffix)
+    except json.JSONDecodeError:
+        return None
+    choices = blob.get("choices")
+    if not choices:
+        return None
+    delta = choices[0].get("delta") or {}
+    content = delta.get("content") or ""
+    return content if content else None
+
+
+async def stream_follow_up_counselor_text(
+    settings: Settings,
+    state: ConversationState,
+    *,
+    supplemental_context: str | None = None,
+) -> AsyncIterator[tuple[str, str]]:
+    """Yield ``("delta", text)`` fragments, then a single ``("end", llm_tag)``.
+
+    Mirrors :func:`generate_followup_counseling_reply` tagging; fallback emits one bundled ``delta``.
+    """
+
+    if not settings.clod_api_key or not settings.clod_base_url or not settings.clod_strong_model:
+        fb, tag = _followup_fallback_text(state, supplemental_context)
+        yield "delta", fb
+        yield "end", tag
+        return
+
+    url = _chat_url(settings)
+    messages = _build_follow_up_chat_messages(state, supplemental_context)
+    body = {
+        "model": settings.clod_strong_model,
+        "messages": messages,
+        "temperature": 0.55,
+        "max_tokens": 1200,
+        "stream": True,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.clod_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    aggregated = ""
+    try:
+        timeout = httpx.Timeout(120.0, connect=30.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            async with client.stream("POST", url, json=body, headers=headers) as response:
+                response.raise_for_status()
+                async for raw_line in response.aiter_lines():
+                    if not raw_line.startswith("data: "):
+                        continue
+                    payload = raw_line.removeprefix("data: ").strip()
+                    if payload == "[DONE]":
+                        break
+                    frag = _sse_openai_collect_delta(payload)
+                    if frag:
+                        aggregated += frag
+                        yield "delta", frag
+        final_text = aggregated.strip()
+        if not final_text:
+            raise ValueError("empty streamed assistant content")
+        yield "end", "llm_ok"
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+        fb, lab = _fallback_followup(state)
+        if supplemental_context:
+            fb = fb + "\n\nEngine note (deterministic):\n" + supplemental_context[:1800]
+            yield "delta", fb
+            yield "end", "fallback_llm_failed"
+        else:
+            yield "delta", fb
+            yield "end", lab

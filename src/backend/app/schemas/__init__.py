@@ -9,7 +9,12 @@ from app.schemas.fortune import (
 from app.schemas.intake import StartReadingRequest
 from app.schemas.profiles import PersonProfile
 from app.schemas.report import ReportSection, SajuReport
-from app.schemas.requests import ChatRequest, LoadDemoRequest, ResetSessionRequest
+from app.schemas.requests import (
+    ChatRequest,
+    LoadDemoRequest,
+    PartnerCompatibilityPayload,
+    ResetSessionRequest,
+)
 from app.schemas.responses import (
     ChatResponse,
     HealthResponse,
@@ -32,6 +37,7 @@ __all__ = [
     "HealthResponse",
     "InitialReadingResponse",
     "LoadDemoRequest",
+    "PartnerCompatibilityPayload",
     "PersonProfile",
     "PillarData",
     "ReportSection",
