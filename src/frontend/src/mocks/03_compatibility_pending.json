@@ -1,0 +1,52 @@
+{
+  "session_id": "demo-session-001",
+  "assistant_message": "If you'd like, I can also look at the flow between the two of you. Do you know their date of birth?",
+  "current_stage": "collecting_compatibility_info",
+  "recommended_tab": "counseling_board",
+  "thinking_state": null,
+  "saju_report": {
+    "id": "saju_report_user_001",
+    "title": "Yoonhye's Full Saju Report",
+    "overall_summary": "A chart with strong momentum and deep emotional sensitivity.",
+    "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+    "dominant_elements": ["fire"],
+    "lacking_elements": ["earth", "water"],
+    "keywords": ["direct", "deep-feeling", "change-oriented"],
+    "personality": { "title": "Personality", "summary": "When your heart moves, you tend to act before you overthink." },
+    "relationship_style": { "title": "Relationship Style", "summary": "Open on the surface, watchful underneath." },
+    "career_style": { "title": "Career Style", "summary": "Thrives in movement and growth." },
+    "emotional_pattern": { "title": "Emotional Pattern", "summary": "Composed outside, things linger inside." },
+    "strengths": ["drive", "resilience", "intuitive judgment"],
+    "cautions": ["emotional overheating", "holding things in too long", "late-arriving fatigue after decisions"],
+    "one_line_verdict": "You become strongest when you learn to pause without losing your fire."
+  },
+  "counseling_board": {
+    "profile_summary": {
+      "id": "profile_user_001",
+      "title": "Yoonhye's Base Flow",
+      "one_line_summary": "Strong momentum paired with deep emotional sensitivity.",
+      "elements": { "wood": 2, "fire": 4, "earth": 1, "metal": 2, "water": 1 },
+      "dominant_elements": ["fire"],
+      "lacking_elements": ["earth", "water"],
+      "keywords": ["direct", "deep-feeling", "change-oriented"]
+    },
+    "active_reading": {
+      "id": "compatibility_pending_001",
+      "semantic_key": "compatibility:user:minsoo",
+      "template": "compatibility_pending",
+      "title": "Reading the Flow Between You Two",
+      "left_person": { "name": "Yoonhye" },
+      "right_person": { "name": "Minsoo" },
+      "status_message": "Reading the flow between you two…",
+      "missing_fields": ["birth_date"]
+    },
+    "insight_summaries": [],
+    "history": []
+  },
+  "ui_event": {
+    "type": "template_changed",
+    "from_template": "general_reading",
+    "to_template": "compatibility_pending",
+    "target_id": "compatibility_pending_001"
+  }
+}

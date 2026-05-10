@@ -83,7 +83,7 @@
 ## Directory Structure
 
 ```
-frontend/
+src/frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.ts                  # axios instance, base URL, interceptors
@@ -92,15 +92,10 @@ frontend/
 │   │
 │   ├── types/
 │   │   └── api.ts                     # Full TypeScript types from API contract
-│   │                                  # SajuReport, CounselingBoard, ActiveReading,
-│   │                                  # all 5 template types, UIEvent, etc.
 │   │
 │   ├── store/
 │   │   └── sessionStore.ts            # Zustand store
-│   │                                  # - session_id, phase, messages
-│   │                                  # - saju_report snapshot
-│   │                                  # - counseling_board snapshot
-│   │                                  # - activeTab: "saju_report" | "counseling_board"
+│   │                                  # session_id, phase, saju_report, counseling_board, activeTab
 │   │
 │   ├── mocks/                         # Static JSON for backend-free development
 │   │   ├── 01_initial_reading_response.json
@@ -112,54 +107,50 @@ frontend/
 │   │   └── 07_timing_recommendation_career.json
 │   │
 │   ├── components/
-│   │   │
 │   │   ├── intake/
-│   │   │   └── IntakeForm.tsx         # Name, birth date, birth time, gender → POST /reading/start
-│   │   │
+│   │   │   └── IntakeForm.tsx
 │   │   ├── chat/
-│   │   │   ├── ChatArea.tsx           # Scrollable message list
-│   │   │   ├── ChatMessage.tsx        # AI / user bubble variants
-│   │   │   └── ChatInput.tsx          # Text input + send button
-│   │   │
+│   │   │   ├── ChatArea.tsx
+│   │   │   ├── ChatMessage.tsx
+│   │   │   └── ChatInput.tsx
 │   │   ├── right-panel/
-│   │   │   ├── RightPanel.tsx         # Wraps TabBar + tab content
-│   │   │   ├── TabBar.tsx             # "Full Saju Report" / "Counseling Board" tabs
-│   │   │   │
+│   │   │   ├── RightPanel.tsx
+│   │   │   ├── TabBar.tsx
 │   │   │   ├── saju-report/
-│   │   │   │   ├── SajuReportTab.tsx  # Full static dashboard
-│   │   │   │   ├── ElementChart.tsx   # Five-element radar or bar chart
-│   │   │   │   ├── ReportSection.tsx  # Personality / relationship / career / emotional pattern
-│   │   │   │   └── StrengthsCautions.tsx
-│   │   │   │
+│   │   │   │   ├── SajuReportTab.tsx
+│   │   │   │   ├── ElementChart.tsx
+│   │   │   │   └── ReportSection.tsx
 │   │   │   └── counseling-board/
 │   │   │       ├── CounselingBoard.tsx
-│   │   │       ├── ProfileSummary.tsx       # Compact base flow at top of board
-│   │   │       ├── InsightChips.tsx         # Accumulated insight_summaries
+│   │   │       ├── ProfileSummary.tsx
+│   │   │       ├── InsightChips.tsx
 │   │   │       └── active-reading/
-│   │   │           ├── ActiveReading.tsx             # Template switch dispatcher
-│   │   │           ├── GeneralReadingView.tsx         # general_reading template
-│   │   │           ├── CompatibilityPendingView.tsx   # Two nodes + animated line
-│   │   │           ├── CompatibilityResultView.tsx    # Score, label, strengths/friction
-│   │   │           ├── FortuneFlowView.tsx            # Domain flow + timeline segments
-│   │   │           └── TimingRecommendationView.tsx   # Best window + caution window
-│   │   │
-│   │   └── ui/                        # Shared primitives
-│   │       ├── ElementBadge.tsx       # Wood / Fire / Earth / Metal / Water badge
-│   │       ├── KeywordChip.tsx        # Keyword pill
-│   │       └── LoadingDots.tsx        # Typing indicator
+│   │   │           ├── ActiveReading.tsx
+│   │   │           ├── GeneralReadingView.tsx
+│   │   │           ├── CompatibilityPendingView.tsx
+│   │   │           ├── CompatibilityResultView.tsx
+│   │   │           ├── FortuneFlowView.tsx
+│   │   │           └── TimingRecommendationView.tsx
+│   │   └── ui/
+│   │       ├── ElementBadge.tsx
+│   │       ├── KeywordChip.tsx
+│   │       └── LoadingDots.tsx
 │   │
 │   ├── pages/
-│   │   └── MainPage.tsx               # Phase router: intake → split layout
+│   │   └── MainPage.tsx
 │   │
 │   ├── App.tsx
 │   ├── main.tsx
-│   └── index.css                      # Tailwind base + custom sage palette
+│   └── index.css
 │
 ├── index.html
 ├── package.json
 ├── vite.config.ts
 ├── tailwind.config.ts
-└── tsconfig.json
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+└── postcss.config.js
 ```
 
 ---
@@ -167,28 +158,27 @@ frontend/
 ## App State (Zustand)
 
 ```ts
-type Phase = "intake" | "reading" | "counseling";
+type Phase = "intake" | "reading" | "counseling"
 
 type SessionStore = {
-  sessionId: string;
-  phase: Phase;
-  messages: ChatMessage[];
-  sajuReport: SajuReport | null;
-  counselingBoard: CounselingBoard | null;
-  activeTab: "saju_report" | "counseling_board";
+  sessionId: string
+  phase: Phase
+  messages: ChatMessage[]
+  sajuReport: SajuReport | null
+  counselingBoard: CounselingBoard | null
+  activeTab: "saju_report" | "counseling_board"
+  isLoading: boolean
 
-  startReading: (request: StartReadingRequest) => Promise<void>;
-  sendMessage: (text: string) => Promise<void>;
-  setActiveTab: (tab: "saju_report" | "counseling_board") => void;
-  resetSession: () => Promise<void>;
-};
+  setReadingResult: (...) => void
+  setChatResult: (...) => void
+  setActiveTab: (tab) => void
+  reset: () => void
+}
 ```
 
 ---
 
 ## Active Reading Templates
-
-The right panel's Counseling Board switches between 5 templates based on `active_reading.template` from the backend:
 
 | Template | Trigger | Key visuals |
 |----------|---------|-------------|
@@ -200,48 +190,12 @@ The right panel's Counseling Board switches between 5 templates based on `active
 
 ---
 
-## API Endpoints Used
-
-| Method | Endpoint | When |
-|--------|----------|------|
-| `POST` | `/reading/start` | Intake form submitted |
-| `POST` | `/chat` | User sends a follow-up message |
-| `POST` | `/session/reset` | Reset button |
-
----
-
-## Development Phases
-
-### Phase 1 — Foundation (parallel with backend)
-- [ ] Project scaffolding (Vite + React + TS + Tailwind)
-- [ ] TypeScript types from API contract
-- [ ] Mock JSON files (7 scenarios)
-- [ ] Zustand store setup
-- [ ] Intake form
-- [ ] Basic split layout
-- [ ] Tab structure (Full Saju Report / Counseling Board)
-
-### Phase 2 — Core rendering
-- [ ] Full Saju Report dashboard (element chart + all sections)
-- [ ] Chat area with message bubbles
-- [ ] All 5 active-reading template components
-- [ ] ProfileSummary + InsightChips
-
-### Phase 3 — Polish & integration
-- [ ] Real API integration (swap mock → live)
-- [ ] Framer Motion animations (crossfade, slide, count-up)
-- [ ] Suggested prompt chips (nice-to-have)
-- [ ] History drawer (nice-to-have)
-- [ ] Mobile basic responsiveness
-
----
-
 ## Getting Started
 
 ```bash
-cd frontend
+cd src/frontend
 npm install
 npm run dev
 ```
 
-> During development, set `VITE_USE_MOCK=true` in `.env.local` to use mock JSON instead of the real API.
+> Set `VITE_USE_MOCK=true` in `.env.local` to use mock JSON instead of the real API (default: true during development).
