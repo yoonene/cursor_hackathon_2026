@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ai-saju-counselor-backend
+    runtime: python
+    rootDir: src/backend
+    plan: free
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: CLOD_BASE_URL
+        value: https://api.clod.io/v1
+      - key: CLOD_STRONG_MODEL
+        value: claude-sonnet-4-5
+      - key: CLOD_FAST_MODEL
+        value: gpt-4o-mini
+      - key: CLOD_API_KEY
+        sync: false
