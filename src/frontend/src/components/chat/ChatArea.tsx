@@ -24,7 +24,7 @@ export default function ChatArea() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-sage-200 bg-warm-white">
         <div className="flex items-center gap-2">
           <span className="text-lg">🌿</span>
-          <span className="text-sm font-semibold text-sage-800">AI Saju Counselor</span>
+          <span className="text-sm font-semibold text-sage-800">Fate.me</span>
         </div>
         {phase !== 'intake' && (
           <button
